@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface LinkShareProps {
     url?: string;
@@ -9,7 +9,37 @@ interface LinkShareProps {
 
 export default function LinkShare({ url, title = '회식 투표에 참여해주세요!' }: LinkShareProps) {
     const [copied, setCopied] = useState(false);
+    const [kakaoReady, setKakaoReady] = useState(false);
     const shareUrl = url || (typeof window !== 'undefined' ? window.location.href : '');
+
+    useEffect(() => {
+        // Kakao SDK 초기화 체크
+        const initKakao = () => {
+            if (typeof window !== 'undefined' && (window as any).Kakao) {
+                const Kakao = (window as any).Kakao;
+                if (!Kakao.isInitialized()) {
+                    const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+                    if (kakaoKey) {
+                        try {
+                            Kakao.init(kakaoKey);
+                            console.log('Kakao SDK initialized');
+                            setKakaoReady(true);
+                        } catch (e) {
+                            console.error('Kakao init error:', e);
+                        }
+                    } else {
+                        console.error('NEXT_PUBLIC_KAKAO_JS_KEY not found');
+                    }
+                } else {
+                    setKakaoReady(true);
+                }
+            }
+        };
+
+        // SDK 로드 대기
+        const timer = setTimeout(initKakao, 500);
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleCopyLink = async () => {
         try {
@@ -18,26 +48,53 @@ export default function LinkShare({ url, title = '회식 투표에 참여해주�
             setTimeout(() => setCopied(false), 2000);
         } catch (error) {
             console.error('복사 실패:', error);
+            // fallback
+            const input = document.createElement('input');
+            input.value = shareUrl;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
         }
     };
 
     const handleKakaoShare = () => {
-        // 카카오톡 공유 (Kakao SDK 필요)
-        if (typeof window !== 'undefined' && (window as any).Kakao) {
-            const Kakao = (window as any).Kakao;
-            if (!Kakao.isInitialized()) {
-                const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
-                if (kakaoKey) {
-                    Kakao.init(kakaoKey);
-                }
-            }
+        if (typeof window === 'undefined') return;
 
+        const Kakao = (window as any).Kakao;
+
+        if (!Kakao) {
+            console.error('Kakao SDK not loaded');
+            alert('카카오 SDK를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+
+        if (!Kakao.isInitialized()) {
+            const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+            if (kakaoKey) {
+                try {
+                    Kakao.init(kakaoKey);
+                } catch (e) {
+                    console.error('Kakao init error:', e);
+                    handleCopyLink();
+                    return;
+                }
+            } else {
+                console.error('NEXT_PUBLIC_KAKAO_JS_KEY not found');
+                handleCopyLink();
+                return;
+            }
+        }
+
+        try {
             Kakao.Share.sendDefault({
                 objectType: 'feed',
                 content: {
                     title: title,
                     description: '밥모아에서 회식 장소를 함께 정해요!',
-                    imageUrl: '', // TODO: 썸네일 이미지
+                    imageUrl: 'https://via.placeholder.com/300x200?text=밥모아',
                     link: {
                         webUrl: shareUrl,
                         mobileWebUrl: shareUrl,
@@ -53,8 +110,9 @@ export default function LinkShare({ url, title = '회식 투표에 참여해주�
                     },
                 ],
             });
-        } else {
-            // Kakao SDK 없으면 링크 복사
+        } catch (error) {
+            console.error('Kakao share error:', error);
+            alert('카카오톡 공유에 실패했습니다. 링크가 복사되었습니다.');
             handleCopyLink();
         }
     };
@@ -85,7 +143,9 @@ export default function LinkShare({ url, title = '회식 투표에 참여해주�
                 onClick={handleKakaoShare}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-yellow-400 hover:bg-yellow-500 rounded-xl transition-colors"
             >
-                <span className="text-lg">💬</span>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3C6.48 3 2 6.58 2 11c0 2.89 1.89 5.41 4.68 6.83l-1.01 3.68c-.08.29.21.54.48.39L10.34 19c.54.07 1.1.1 1.66.1 5.52 0 10-3.58 10-8s-4.48-8-10-8z" />
+                </svg>
                 <span className="font-medium text-gray-900">카카오톡</span>
             </button>
         </div>
