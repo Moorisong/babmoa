@@ -78,6 +78,7 @@ export function getTimeRemaining(deadline: string): string {
 
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
     if (hours > 24) {
         const days = Math.floor(hours / 24);
@@ -88,5 +89,9 @@ export function getTimeRemaining(deadline: string): string {
         return `${hours}시간 ${minutes}분 남음`;
     }
 
-    return `${minutes}분 남음`;
+    if (minutes > 0) {
+        return `${minutes}분 ${seconds}초 남음`;
+    }
+
+    return `${seconds}초 남음`;
 }

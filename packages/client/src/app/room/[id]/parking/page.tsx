@@ -104,22 +104,28 @@ export default function ParkingPage() {
         );
     }
 
+    // 방금 기록 완료 또는 이미 기록한 경우
     if (alreadyRecorded) {
         return (
             <>
                 <Header />
                 <main className="max-w-lg mx-auto px-4 py-8">
-                    <div className="text-center py-8">
-                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <div className="text-center py-8 animate-fade-in">
+                        <div className="success-circle mx-auto mb-4 animate-scale-in">
+                            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">이미 기록하셨습니다!</h3>
-                        <p className="text-gray-500 mb-6">소중한 경험을 공유해 주셔서 감사합니다</p>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                            🎉 주차 경험이 기록되었습니다!
+                        </h3>
+                        <p className="text-gray-500 mb-2">소중한 경험을 공유해 주셔서 감사합니다</p>
+                        <p className="text-sm text-indigo-500 mb-6">
+                            다음에 이 장소를 검색하면 주차 성공률이 표시됩니다
+                        </p>
                         <button
                             onClick={() => router.push(`/room/${roomId}/result`)}
-                            className="px-6 py-3 bg-blue-500 text-white font-medium rounded-xl hover:bg-blue-600 transition-colors"
+                            className="btn-primary px-8"
                         >
                             결과 페이지로 돌아가기
                         </button>

@@ -33,6 +33,21 @@ export default function RoomPage() {
     const [submitting, setSubmitting] = useState(false);
     const [voted, setVotedState] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [timeRemaining, setTimeRemaining] = useState<string>('');
+
+    // 실시간 카운트다운
+    useEffect(() => {
+        if (!room) return;
+
+        const updateTime = () => {
+            setTimeRemaining(getTimeRemaining(room.options.deadline));
+        };
+
+        updateTime();
+        const interval = setInterval(updateTime, 1000);
+
+        return () => clearInterval(interval);
+    }, [room]);
 
     useEffect(() => {
         loadRoom();
@@ -159,7 +174,7 @@ export default function RoomPage() {
                 <div className="mb-8 animate-fade-in">
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">{room.title}</h1>
                     <div className="inline-block px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-sm font-medium">
-                        ⏰ {getTimeRemaining(room.options.deadline)}
+                        ⏰ {timeRemaining}
                     </div>
                 </div>
 

@@ -132,7 +132,7 @@ export default function HomePage() {
     };
 
     setPlaces([...places, newPlace]);
-    setSearchQuery('');
+    // 검색어는 유지, 드롭다운만 닫기
     setShowResults(false);
   };
 
