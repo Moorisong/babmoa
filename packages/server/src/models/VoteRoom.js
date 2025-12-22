@@ -13,7 +13,8 @@ const voteRoomSchema = new mongoose.Schema({
         placeId: { type: String, required: true },
         name: { type: String, required: true },
         address: { type: String },
-        category: { type: String }
+        category: { type: String },
+        categoryDetail: { type: String }
     }],
     options: {
         allowPass: { type: Boolean, default: true },

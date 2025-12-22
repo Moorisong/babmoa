@@ -32,7 +32,7 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
 export const roomsApi = {
     create: (data: {
         title: string;
-        places: Array<{ placeId: string; name: string; address: string; category: string }>;
+        places: Array<{ placeId: string; name: string; address: string; category: string; categoryDetail?: string }>;
         options: { allowPass: boolean; deadline: string };
     }) => fetchApi<{ roomId: string }>('/rooms', {
         method: 'POST',
@@ -42,7 +42,7 @@ export const roomsApi = {
     get: (roomId: string) => fetchApi<{
         roomId: string;
         title: string;
-        places: Array<{ placeId: string; name: string; address: string; category: string }>;
+        places: Array<{ placeId: string; name: string; address: string; category: string; categoryDetail?: string }>;
         options: { allowPass: boolean; deadline: string };
         result: { winnerPlaceId: string | null; decidedAt: string | null };
         isClosed: boolean;

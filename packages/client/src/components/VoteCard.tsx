@@ -5,6 +5,7 @@ interface VoteCardProps {
     name: string;
     address: string;
     category: string;
+    categoryDetail?: string;
     selected: boolean;
     onSelect: (placeId: string) => void;
     voteCount?: number;
@@ -18,6 +19,7 @@ export default function VoteCard({
     name,
     address,
     category,
+    categoryDetail,
     selected,
     onSelect,
     voteCount = 0,
@@ -25,6 +27,11 @@ export default function VoteCard({
     disabled = false,
     index = 0,
 }: VoteCardProps) {
+    // 카테고리 상세에서 마지막 항목만 추출 (예: "음식점 > 한식 > 해장국" → "해장국")
+    const displayCategory = categoryDetail
+        ? categoryDetail.split(' > ').slice(-1)[0]
+        : category;
+
     return (
         <div
             onClick={() => !disabled && onSelect(placeId)}
@@ -38,7 +45,7 @@ export default function VoteCard({
         >
             {/* 카테고리 뱃지 */}
             <span className="inline-block px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-full mb-3">
-                {category}
+                {displayCategory}
             </span>
 
             {/* 장소 이름 */}

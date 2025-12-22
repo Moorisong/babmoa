@@ -11,6 +11,7 @@ interface Place {
     name: string;
     address: string;
     category: string;
+    categoryDetail?: string;
 }
 
 interface Room {
@@ -179,8 +180,8 @@ export default function RoomPage() {
                         <button
                             onClick={() => setSelectedPlaceId(null)}
                             className={`card w-full p-4 text-left transition-all animate-slide-up ${selectedPlaceId === null
-                                    ? 'card-selected !border-gray-500 !bg-gray-50'
-                                    : ''
+                                ? 'card-selected !border-gray-500 !bg-gray-50'
+                                : ''
                                 }`}
                             style={{ animationDelay: `${room.places.length * 0.1}s` }}
                         >

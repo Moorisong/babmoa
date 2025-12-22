@@ -10,6 +10,7 @@ interface Place {
   name: string;
   address: string;
   category: string;
+  categoryDetail?: string;
 }
 
 const CATEGORIES = ['전체', '한식', '중식', '일식', '양식', '고기', '해산물', '분식', '카페', '술집'];
@@ -127,6 +128,7 @@ export default function HomePage() {
       name: kakaoPlace.name,
       address: kakaoPlace.address,
       category: kakaoPlace.category || '음식점',
+      categoryDetail: kakaoPlace.categoryDetail,
     };
 
     setPlaces([...places, newPlace]);
@@ -248,8 +250,8 @@ export default function HomePage() {
                 key={cat}
                 onClick={() => handleCategoryChange(cat)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === cat
-                    ? 'bg-indigo-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-indigo-500 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
               >
                 {cat}
@@ -297,8 +299,8 @@ export default function HomePage() {
                           <span className="text-xs text-indigo-500">{place.category}</span>
                           {place.parkingSuccessRate !== null && place.parkingSuccessRate !== undefined && (
                             <span className={`text-xs px-2 py-0.5 rounded-full ${place.parkingSuccessRate >= 70 ? 'bg-green-100 text-green-700' :
-                                place.parkingSuccessRate >= 40 ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-red-100 text-red-700'
+                              place.parkingSuccessRate >= 40 ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
                               }`}>
                               🅿️ {place.parkingSuccessRate}%
                             </span>
