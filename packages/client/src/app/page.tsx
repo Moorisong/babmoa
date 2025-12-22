@@ -211,14 +211,14 @@ export default function HomePage() {
   return (
     <>
       <Header />
-      <main className="max-w-lg mx-auto px-4 py-8">
+      <main className="max-w-lg mx-auto px-5 py-12">
         {/* 히어로 섹션 */}
-        <div className="text-center mb-10 animate-fade-in">
-          <h1 className="text-3xl font-bold mb-3">
+        <div className="text-center mb-14 animate-fade-in">
+          <h1 className="text-3xl font-bold mb-4">
             <span className="gradient-text">마포구 전용</span>
             <span className="text-gray-900"> 오늘의 회식 PICK</span>
           </h1>
-          <p className="text-lg text-gray-700 font-medium mb-1">
+          <p className="text-lg text-gray-700 font-medium mb-2">
             실제 방문 기록 기반으로 <span className="text-indigo-600 font-bold">'주차장 정보'</span>까지 확인할 수 있어요.
           </p>
           <p className="text-sm text-gray-500">
@@ -227,8 +227,8 @@ export default function HomePage() {
         </div>
 
         {/* 제목 입력 */}
-        <div className="mb-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+        <div className="mb-10 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <label className="block text-sm font-semibold text-gray-700 mb-3">
             📝 투표 제목
           </label>
           <input
@@ -236,24 +236,24 @@ export default function HomePage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="예: 12월 팀 송년회 장소"
-            className="input-field"
+            className="input-field py-4 text-base"
           />
         </div>
 
-        {/* 장소 검색 */}
-        <div className="mb-6 animate-slide-up relative z-50" style={{ animationDelay: '0.15s' }} ref={searchRef}>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+        {/* 장소 검색 (Border Added) */}
+        <div className="mb-10 animate-slide-up relative z-50 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm" style={{ animationDelay: '0.15s' }} ref={searchRef}>
+          <label className="block text-sm font-semibold text-gray-700 mb-3">
             🔎 후보 장소 검색
           </label>
 
           {/* 마포구 지역 제한 안내 */}
-          <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg">
+          <div className="flex items-center gap-2 mb-4 px-3 py-3 bg-indigo-50 border border-indigo-100 rounded-xl">
             <span className="text-indigo-600">ℹ️</span>
             <span className="text-sm text-indigo-700">마포구 실제 방문 기록을 기반으로 주차 정보를 제공합니다</span>
           </div>
 
           {/* 지역 고정 표시 */}
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-4">
             <div className="px-3 py-1.5 bg-gray-100 rounded-full text-sm font-medium text-gray-600 flex items-center gap-1">
               📍 마포구
             </div>
@@ -261,12 +261,12 @@ export default function HomePage() {
           </div>
 
           {/* 카테고리 필터 (복구) */}
-          <div className="flex gap-2 mb-3 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => handleCategoryChange(cat)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === cat
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === cat
                   ? 'bg-indigo-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
@@ -277,7 +277,7 @@ export default function HomePage() {
           </div>
 
           {/* 정렬 안내 (고정) */}
-          <div className="flex items-center gap-1 mb-4 text-xs text-indigo-600 font-medium bg-indigo-50 px-2 py-1 rounded inline-block">
+          <div className="flex items-center gap-1 mb-5 text-xs text-indigo-600 font-medium bg-indigo-50 px-3 py-1.5 rounded-lg inline-block">
             <span>✨ 주차 데이터 있는 식당 우선 · 가까운 순</span>
           </div>
 
@@ -288,7 +288,7 @@ export default function HomePage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => searchResults && searchResults.length > 0 && setShowResults(true)}
               placeholder="가게 이름, 지역 이름, 메뉴 등"
-              className="input-field pr-10"
+              className="input-field py-4 pr-10 text-base"
             />
             {searching && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
