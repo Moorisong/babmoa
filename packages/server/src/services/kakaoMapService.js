@@ -9,6 +9,32 @@ const { cacheService } = require('./cacheService');
 const KAKAO_API_BASE = 'https://dapi.kakao.com/v2/local';
 const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY;
 
+// 카테고리 매핑
+const CATEGORY_MAP = {
+    '전체': '',
+    '한식': '한식',
+    '중식': '중식',
+    '일식': '일식',
+    '양식': '양식',
+    '고기': '고기',
+    '해산물': '해산물',
+    '분식': '분식',
+    '카페': '카페',
+    '술집': '술집',
+};
+
+/**
+ * 배열 랜덤 셔플 (Fisher-Yates)
+ */
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
 /**
  * 카카오 API 호출 헬퍼
  */
@@ -37,30 +63,61 @@ async function callKakaoApi(endpoint, params = {}) {
 
 /**
  * 장소 검색 (키워드)
- * 캐시 TTL: 24시간
+ * @param {string} keyword - 검색 키워드
+ * @param {object} options - 옵션
+ * @param {string} options.category - 카테고리 (한식, 중식 등)
+ * @param {number} options.page - 페이지 번호
+ * @param {number} options.size - 결과 개수
+ * @param {boolean} options.shuffle - 결과 랜덤 셔플
+ * @param {string} options.x - 경도
+ * @param {string} options.y - 위도
+ * @param {number} options.radius - 반경 (m)
  */
 async function searchPlaces(keyword, options = {}) {
-    const { x, y, radius = 5000, page = 1, size = 15 } = options;
+    const {
+        x, y,
+        radius = 5000,
+        page = 1,
+        size = 15,
+        category = '전체',
+        shuffle = false
+    } = options;
+
+    // 카테고리 키워드 추가
+    const categoryKeyword = CATEGORY_MAP[category] || '';
+    let searchKeyword = keyword;
+
+    // 맛집/음식점/식당 키워드가 없으면 추가
+    if (!keyword.includes('맛집') && !keyword.includes('음식점') && !keyword.includes('식당')) {
+        searchKeyword = categoryKeyword
+            ? `${keyword} ${categoryKeyword}`
+            : `${keyword} 맛집`;
+    } else if (categoryKeyword && !keyword.includes(categoryKeyword)) {
+        searchKeyword = `${keyword} ${categoryKeyword}`;
+    }
 
     // 캐시 키 생성
     const cacheKey = cacheService.getSearchCacheKey(
         `${x || 'default'},${y || 'default'}`,
-        `${keyword}:${page}:${size}`
+        `${searchKeyword}:${page}:${size}:${category}`
     );
 
     // 캐시 확인
     const cached = cacheService.get(cacheKey);
     if (cached) {
-        console.log(`[캐시 히트] 장소 검색: ${keyword}`);
+        console.log(`[캐시 히트] 장소 검색: ${searchKeyword}`);
+        // 셔플 옵션이 있으면 캐시된 결과도 셔플
+        if (shuffle && cached.places) {
+            return { ...cached, places: shuffleArray(cached.places) };
+        }
         return cached;
     }
 
-    // API 호출
-    console.log(`[API 호출] 장소 검색: ${keyword}`);
+    console.log(`[API 호출] 장소 검색: ${searchKeyword} (page: ${page})`);
     const params = {
-        query: keyword,
+        query: searchKeyword,
         page,
-        size,
+        size: 15,
     };
 
     if (x && y) {
@@ -72,21 +129,44 @@ async function searchPlaces(keyword, options = {}) {
 
     const data = await callKakaoApi('/search/keyword.json', params);
 
+    // 음식점, 카페, 술집만 필터링
+    const foodCategories = ['음식점', '카페', '술집'];
+    const filteredDocs = data.documents.filter(doc =>
+        foodCategories.includes(doc.category_group_name)
+    );
+
+    // 중복 제거 (placeId 기준)
+    const seen = new Set();
+    const uniqueDocs = filteredDocs.filter(doc => {
+        if (seen.has(doc.id)) return false;
+        seen.add(doc.id);
+        return true;
+    }).slice(0, size);
+
     // 결과 가공
+    let places = uniqueDocs.map(doc => ({
+        placeId: doc.id,
+        name: doc.place_name,
+        address: doc.road_address_name || doc.address_name,
+        category: doc.category_group_name || doc.category_name,
+        categoryDetail: doc.category_name,
+        phone: doc.phone,
+        x: doc.x,
+        y: doc.y,
+    }));
+
+    // 셔플 옵션
+    if (shuffle) {
+        places = shuffleArray(places);
+    }
+
     const result = {
-        places: data.documents.map(doc => ({
-            placeId: doc.id,
-            name: doc.place_name,
-            address: doc.road_address_name || doc.address_name,
-            category: doc.category_group_name || doc.category_name,
-            phone: doc.phone,
-            x: doc.x,
-            y: doc.y,
-        })),
+        places,
         meta: {
             totalCount: data.meta.total_count,
             pageableCount: data.meta.pageable_count,
             isEnd: data.meta.is_end,
+            currentPage: page,
         },
     };
 
@@ -101,25 +181,28 @@ async function searchPlaces(keyword, options = {}) {
  * 캐시 TTL: 7일
  */
 async function getPlaceDetail(placeId) {
-    // 캐시 키 생성
     const cacheKey = cacheService.getDetailCacheKey(placeId);
 
-    // 캐시 확인
     const cached = cacheService.get(cacheKey);
     if (cached) {
         console.log(`[캐시 히트] 장소 상세: ${placeId}`);
         return cached;
     }
 
-    // 카카오맵은 ID로 상세 조회하는 공식 API가 없음
-    // 검색 결과에서 ID 매칭으로 찾거나, 키워드 검색으로 대체
     console.log(`[캐시 미스] 장소 상세: ${placeId}`);
-
-    // 실제로는 검색 결과 캐시에서 찾거나 null 반환
     return null;
+}
+
+/**
+ * 사용 가능한 카테고리 목록
+ */
+function getCategories() {
+    return Object.keys(CATEGORY_MAP);
 }
 
 module.exports = {
     searchPlaces,
     getPlaceDetail,
+    getCategories,
+    CATEGORY_MAP,
 };

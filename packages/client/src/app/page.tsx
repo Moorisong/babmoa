@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header, LinkShare } from '@/components';
-import { roomsApi } from '@/lib/api';
+import { roomsApi, placesApi, KakaoPlace } from '@/lib/api';
 
 interface Place {
   placeId: string;
@@ -11,6 +11,8 @@ interface Place {
   address: string;
   category: string;
 }
+
+const CATEGORIES = ['전체', '한식', '중식', '일식', '양식', '고기', '해산물', '분식', '카페', '술집'];
 
 export default function HomePage() {
   const router = useRouter();
@@ -20,20 +22,116 @@ export default function HomePage() {
   const [deadline, setDeadline] = useState('');
   const [loading, setLoading] = useState(false);
   const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  const handleAddPlace = () => {
-    if (!searchQuery.trim()) return;
+  // 장소 검색
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<KakaoPlace[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [searchPage, setSearchPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('전체');
+  const searchRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 검색 함수
+  const performSearch = async (query: string, category: string, page: number = 1, append: boolean = false) => {
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
+
+    if (page === 1) setSearching(true);
+    else setLoadingMore(true);
+
+    try {
+      const result = await placesApi.search(query, { category, page });
+      if (result.success && result.data) {
+        const newPlaces = result.data.places;
+        if (append) {
+          setSearchResults(prev => [...prev, ...newPlaces]);
+        } else {
+          setSearchResults(newPlaces);
+        }
+        setShowResults(true);
+        setHasMore(!result.data.meta.isEnd && newPlaces.length >= 5);
+        setSearchPage(page);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setSearching(false);
+      setLoadingMore(false);
+    }
+  };
+
+  // 검색 디바운스
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    if (searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      setShowResults(false);
+      setSearchPage(1);
+      setHasMore(false);
+      return;
+    }
+
+    debounceRef.current = setTimeout(() => {
+      performSearch(searchQuery, selectedCategory, 1, false);
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery, selectedCategory]);
+
+  // 카테고리 변경 시 재검색
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    if (searchQuery.trim().length >= 2) {
+      performSearch(searchQuery, category, 1, false);
+    }
+  };
+
+  // 더보기
+  const loadMore = () => {
+    if (!hasMore || loadingMore) return;
+    performSearch(searchQuery, selectedCategory, searchPage + 1, true);
+  };
+
+  // 외부 클릭 시 검색 결과 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelectPlace = (kakaoPlace: KakaoPlace) => {
+    if (places.some(p => p.placeId === kakaoPlace.placeId)) {
+      alert('이미 추가된 장소입니다');
+      return;
+    }
 
     const newPlace: Place = {
-      placeId: `temp_${Date.now()}`,
-      name: searchQuery,
-      address: '검색 결과 주소',
-      category: '음식점',
+      placeId: kakaoPlace.placeId,
+      name: kakaoPlace.name,
+      address: kakaoPlace.address,
+      category: kakaoPlace.category || '음식점',
     };
 
     setPlaces([...places, newPlace]);
     setSearchQuery('');
+    setShowResults(false);
   };
 
   const handleRemovePlace = (placeId: string) => {
@@ -137,34 +235,118 @@ export default function HomePage() {
           />
         </div>
 
-        {/* 장소 추가 */}
-        <div className="mb-6 animate-slide-up" style={{ animationDelay: '0.15s' }}>
+        {/* 장소 검색 */}
+        <div className="mb-6 animate-slide-up relative z-50" style={{ animationDelay: '0.15s' }} ref={searchRef}>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            📍 후보 장소
+            📍 후보 장소 검색
           </label>
-          <div className="flex gap-2 mb-3">
+
+          {/* 카테고리 필터 */}
+          <div className="flex gap-2 mb-3 overflow-x-auto pb-2 scrollbar-hide">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => handleCategoryChange(cat)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${selectedCategory === cat
+                    ? 'bg-indigo-500 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="장소 이름 입력"
-              className="input-field flex-1"
-              onKeyDown={(e) => e.key === 'Enter' && handleAddPlace()}
+              onFocus={() => searchResults && searchResults.length > 0 && setShowResults(true)}
+              placeholder="지역 또는 장소 이름 검색 (예: 강남역)"
+              className="input-field pr-10"
             />
-            <button
-              onClick={handleAddPlace}
-              className="px-5 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl hover:opacity-90 transition-opacity font-medium shadow-lg shadow-indigo-200"
-            >
-              추가
-            </button>
+            {searching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <svg className="animate-spin w-5 h-5 text-indigo-500" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              </div>
+            )}
+
+            {/* 검색 결과 드롭다운 */}
+            {showResults && searchResults && searchResults.length > 0 && (
+              <div className="absolute z-50 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-200 max-h-96 overflow-y-auto animate-fade-in">
+                {searchResults.map((place) => (
+                  <button
+                    key={place.placeId}
+                    onClick={() => handleSelectPlace(place)}
+                    className="w-full p-4 text-left hover:bg-indigo-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-xl">
+                        {place.category === '음식점' ? '🍽️' :
+                          place.category === '카페' ? '☕' :
+                            place.category === '술집' ? '🍺' : '📍'}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{place.name}</p>
+                        <p className="text-sm text-gray-500 truncate">{place.address}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-indigo-500">{place.category}</span>
+                          {place.parkingSuccessRate !== null && place.parkingSuccessRate !== undefined && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${place.parkingSuccessRate >= 70 ? 'bg-green-100 text-green-700' :
+                                place.parkingSuccessRate >= 40 ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-red-100 text-red-700'
+                              }`}>
+                              🅿️ {place.parkingSuccessRate}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+
+                {/* 더보기 버튼 */}
+                {hasMore && (
+                  <button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="w-full py-3 text-center text-indigo-600 font-medium hover:bg-indigo-50 transition-colors border-t border-gray-100"
+                  >
+                    {loadingMore ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        로딩 중...
+                      </span>
+                    ) : (
+                      '더보기 ↓'
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 검색 결과 없음 */}
+            {showResults && searchQuery.length >= 2 && (!searchResults || searchResults.length === 0) && !searching && (
+              <div className="absolute z-50 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-200 p-6 text-center animate-fade-in">
+                <p className="text-gray-500">검색 결과가 없습니다</p>
+                <p className="text-xs text-gray-400 mt-1">다른 키워드로 검색해보세요</p>
+              </div>
+            )}
           </div>
 
           {/* 추가된 장소 목록 */}
-          <div className="space-y-2">
+          <div className="mt-4 space-y-2">
             {places.length === 0 && (
               <div className="text-center py-8 text-gray-400">
                 <p className="text-4xl mb-2">🍽️</p>
-                <p className="text-sm">장소를 추가해주세요</p>
+                <p className="text-sm">장소를 검색해서 추가해주세요</p>
               </div>
             )}
             {places.map((place, index) => (
@@ -177,14 +359,14 @@ export default function HomePage() {
                   <span className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-bold text-sm">
                     {index + 1}
                   </span>
-                  <div>
-                    <p className="font-medium text-gray-900">{place.name}</p>
-                    <p className="text-xs text-gray-500">{place.category}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{place.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{place.address}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => handleRemovePlace(place.placeId)}
-                  className="w-8 h-8 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all flex items-center justify-center"
+                  className="w-8 h-8 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all flex items-center justify-center flex-shrink-0"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

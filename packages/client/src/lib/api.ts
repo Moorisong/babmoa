@@ -83,3 +83,48 @@ export const parkingApi = {
         byTimeSlot: Record<string, { attempts: number; successRate: number }>;
     }>(`/parking/${placeId}/stats`),
 };
+
+// 장소 검색 API (카카오맵)
+export interface KakaoPlace {
+    placeId: string;
+    name: string;
+    address: string;
+    category: string;
+    categoryDetail?: string;
+    phone: string;
+    x: string;
+    y: string;
+    parkingSuccessRate?: number | null;
+    totalParkingAttempts?: number;
+}
+
+export interface PlaceSearchOptions {
+    x?: string;
+    y?: string;
+    radius?: number;
+    page?: number;
+    size?: number;
+    category?: string;
+    shuffle?: boolean;
+}
+
+export const placesApi = {
+    search: (keyword: string, options?: PlaceSearchOptions) => {
+        const params = new URLSearchParams();
+        params.append('keyword', keyword);
+        if (options?.x) params.append('x', options.x);
+        if (options?.y) params.append('y', options.y);
+        if (options?.radius) params.append('radius', String(options.radius));
+        if (options?.page) params.append('page', String(options.page));
+        if (options?.size) params.append('size', String(options.size));
+        if (options?.category) params.append('category', options.category);
+        if (options?.shuffle) params.append('shuffle', 'true');
+
+        return fetchApi<{
+            places: KakaoPlace[];
+            meta: { totalCount: number; isEnd: boolean; currentPage: number };
+        }>(`/places/search?${params.toString()}`);
+    },
+
+    getCategories: () => fetchApi<{ categories: string[] }>('/places/categories'),
+};
