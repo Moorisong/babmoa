@@ -66,7 +66,7 @@ export default function ResultPage() {
             setVotes(resultData.data.votes);
             setWinnerPlaceId(resultData.data.winnerPlaceId);
 
-            if (!hasRecordedParking(roomId)) {
+            if (resultData.data.winnerPlaceId && !hasRecordedParking(roomId)) {
                 setTimeout(() => setShowParkingPrompt(true), 2000);
             }
         }
