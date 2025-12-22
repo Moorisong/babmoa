@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 interface LinkShareProps {
     url?: string;
@@ -9,7 +9,7 @@ interface LinkShareProps {
 
 export default function LinkShare({ url, title = '회식 투표에 참여해주세요!' }: LinkShareProps) {
     const [copied, setCopied] = useState(false);
-    const [kakaoReady, setKakaoReady] = useState(false);
+    const [sharing, setSharing] = useState(false);
 
     // 배포 환경에서는 NEXT_PUBLIC_BASE_URL 사용
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
@@ -21,31 +21,6 @@ export default function LinkShare({ url, title = '회식 투표에 참여해주�
         : baseUrl
             ? `${baseUrl}${pathname}`
             : (typeof window !== 'undefined' ? window.location.href : '');
-
-    useEffect(() => {
-        const initKakao = () => {
-            if (typeof window !== 'undefined' && (window as any).Kakao) {
-                const Kakao = (window as any).Kakao;
-                if (!Kakao.isInitialized()) {
-                    const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
-                    if (kakaoKey) {
-                        try {
-                            Kakao.init(kakaoKey);
-                            console.log('Kakao SDK initialized');
-                            setKakaoReady(true);
-                        } catch (e) {
-                            console.error('Kakao init error:', e);
-                        }
-                    }
-                } else {
-                    setKakaoReady(true);
-                }
-            }
-        };
-
-        const timer = setTimeout(initKakao, 500);
-        return () => clearTimeout(timer);
-    }, []);
 
     const handleCopyLink = async () => {
         try {
@@ -64,57 +39,33 @@ export default function LinkShare({ url, title = '회식 투표에 참여해주�
         }
     };
 
-    const handleKakaoShare = () => {
-        if (typeof window === 'undefined') return;
+    // 네이티브 공유 (모바일에서 카카오톡 등 모든 앱으로 공유 가능)
+    const handleNativeShare = async () => {
+        // 중복 클릭 방지
+        if (sharing) return;
 
-        const Kakao = (window as any).Kakao;
-
-        if (!Kakao) {
-            alert('카카오 SDK를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+        if (typeof navigator === 'undefined' || !navigator.share) {
+            // 네이티브 공유 미지원 시 링크 복사
+            handleCopyLink();
             return;
         }
 
-        if (!Kakao.isInitialized()) {
-            const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
-            if (kakaoKey) {
-                try {
-                    Kakao.init(kakaoKey);
-                } catch (e) {
-                    handleCopyLink();
-                    return;
-                }
-            } else {
-                handleCopyLink();
-                return;
-            }
-        }
-
         try {
-            Kakao.Share.sendDefault({
-                objectType: 'feed',
-                content: {
-                    title: `📍 ${title}`,
-                    description: '어디서 먹을지 같이 정해요! 투표 마감 전에 참여해주세요 ⏰',
-                    imageUrl: `${baseUrl || 'https://babmoa-vote.vercel.app'}/og-image.png`,
-                    link: {
-                        webUrl: shareUrl,
-                        mobileWebUrl: shareUrl,
-                    },
-                },
-                buttons: [
-                    {
-                        title: '투표 참여하기',
-                        link: {
-                            webUrl: shareUrl,
-                            mobileWebUrl: shareUrl,
-                        },
-                    },
-                ],
+            setSharing(true);
+            await navigator.share({
+                title: `📍 ${title}`,
+                text: '어디서 먹을지 같이 정해요! 투표 마감 전에 참여해주세요 ⏰',
+                url: shareUrl,
             });
         } catch (error) {
-            console.error('Kakao share error:', error);
-            alert('카카오톡 공유에 실패했습니다. 링크가 복사되었습니다.');
-            handleCopyLink();
+            // 사용자가 취소한 경우는 무시
+            if ((error as Error).name !== 'AbortError') {
+                console.error('Share error:', error);
+                // 공유 실패 시 링크 복사
+                handleCopyLink();
+            }
+        } finally {
+            setSharing(false);
         }
     };
 
@@ -141,13 +92,13 @@ export default function LinkShare({ url, title = '회식 투표에 참여해주�
                 )}
             </button>
             <button
-                onClick={handleKakaoShare}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-yellow-400 hover:bg-yellow-500 rounded-xl transition-colors"
+                onClick={handleNativeShare}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl transition-colors"
             >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 3C6.48 3 2 6.58 2 11c0 2.89 1.89 5.41 4.68 6.83l-1.01 3.68c-.08.29.21.54.48.39L10.34 19c.54.07 1.1.1 1.66.1 5.52 0 10-3.58 10-8s-4.48-8-10-8z" />
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                 </svg>
-                <span className="font-medium text-gray-900">카카오톡</span>
+                <span className="font-medium">공유하기</span>
             </button>
         </div>
     );
