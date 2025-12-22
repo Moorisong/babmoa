@@ -219,7 +219,8 @@ export default function HomePage() {
 
   // 투표방 생성 완료
   if (createdRoomId) {
-    const roomUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/room/${createdRoomId}`;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+    const roomUrl = `${baseUrl}/room/${createdRoomId}`;
 
     return (
       <>

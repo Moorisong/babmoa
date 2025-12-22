@@ -10,7 +10,17 @@ interface LinkShareProps {
 export default function LinkShare({ url, title = '회식 투표에 참여해주세요!' }: LinkShareProps) {
     const [copied, setCopied] = useState(false);
     const [kakaoReady, setKakaoReady] = useState(false);
-    const shareUrl = url || (typeof window !== 'undefined' ? window.location.href : '');
+
+    // 배포 환경에서는 NEXT_PUBLIC_BASE_URL 사용
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+    const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+
+    // url prop이 있으면 사용, 없으면 BASE_URL + pathname, 그것도 없으면 현재 URL
+    const shareUrl = url
+        ? url
+        : baseUrl
+            ? `${baseUrl}${pathname}`
+            : (typeof window !== 'undefined' ? window.location.href : '');
 
     useEffect(() => {
         const initKakao = () => {
@@ -81,32 +91,12 @@ export default function LinkShare({ url, title = '회식 투표에 참여해주�
 
         try {
             Kakao.Share.sendDefault({
-                objectType: 'feed',
-                content: {
-                    title: `📍 ${title}`,
-                    description: '어디서 먹을지 같이 정해요!\n투표 마감 전에 참여해주세요 ⏰',
-                    imageUrl: 'https://via.placeholder.com/800x400/4F46E5/FFFFFF?text=밥모아',
-                    link: {
-                        webUrl: shareUrl,
-                        mobileWebUrl: shareUrl,
-                    },
+                objectType: 'text',
+                text: `📍 ${title}\n\n어디서 먹을지 같이 정해요! 투표 마감 전에 참여해주세요 ⏰`,
+                link: {
+                    webUrl: shareUrl,
+                    mobileWebUrl: shareUrl,
                 },
-                buttons: [
-                    {
-                        title: '✋ 투표 참여하기',
-                        link: {
-                            webUrl: shareUrl,
-                            mobileWebUrl: shareUrl,
-                        },
-                    },
-                    {
-                        title: '👀 결과 보기',
-                        link: {
-                            webUrl: `${shareUrl}/result`,
-                            mobileWebUrl: `${shareUrl}/result`,
-                        },
-                    },
-                ],
             });
         } catch (error) {
             console.error('Kakao share error:', error);
