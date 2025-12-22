@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Header, LinkShare } from '@/components';
 import { roomsApi, placesApi, KakaoPlace } from '@/lib/api';
@@ -208,6 +209,28 @@ export default function HomePage() {
     );
   }
 
+  /* Portal Mounting Logic */
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const [tooltip, setTooltip] = useState<{ show: boolean; x: number; y: number; text: string } | null>(null);
+
+  const handleTooltipEnter = (e: React.MouseEvent, text: string) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({
+      show: true,
+      x: rect.left + rect.width / 2, // Center horizontally
+      y: rect.top - 10, // Above the element
+      text
+    });
+  };
+
+  const handleTooltipLeave = () => {
+    setTooltip(null);
+  };
+
   return (
     <>
       <Header />
@@ -322,7 +345,7 @@ export default function HomePage() {
                           {place.parkingInfo && (
                             <>
                               <span
-                                className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 ${!place.parkingInfo.hasEnoughData
+                                className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 cursor-help ${!place.parkingInfo.hasEnoughData
                                   ? 'bg-gray-50 border-gray-200 text-gray-400'
                                   : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.7
                                     ? 'bg-green-50 border-green-200 text-green-700'
@@ -330,6 +353,8 @@ export default function HomePage() {
                                       ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
                                       : 'bg-red-50 border-red-200 text-red-700'
                                   }`}
+                                onMouseEnter={(e) => place.parkingInfo?.hasEnoughData && handleTooltipEnter(e, "주차 성공률은 실제 방문자들이 남긴 기록을 바탕으로 계산된 참고용 수치입니다.")}
+                                onMouseLeave={handleTooltipLeave}
                               >
                                 {place.parkingInfo.hasEnoughData ? (
                                   <>
@@ -342,16 +367,9 @@ export default function HomePage() {
                                 )}
                               </span>
                               {place.parkingInfo.hasEnoughData && (
-                                <div className="relative group">
-                                  <span className="text-[10px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded bg-gray-50 cursor-help">
-                                    참고용
-                                  </span>
-                                  {/* Tooltip */}
-                                  <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-[10px] rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 text-center pointer-events-none">
-                                    주차 성공률은 실제 방문자들이 남긴 기록을 바탕으로 계산된 참고용 수치입니다.
-                                    <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-800"></div>
-                                  </div>
-                                </div>
+                                <span className="text-[10px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded bg-gray-50">
+                                  참고용
+                                </span>
                               )}
                             </>
                           )}
