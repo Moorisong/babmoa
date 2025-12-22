@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Footer } from "@/components";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -38,6 +39,7 @@ export default function RootLayout({
       >
         <QueryProvider>
           {children}
+          <Footer />
         </QueryProvider>
       </body>
     </html>
