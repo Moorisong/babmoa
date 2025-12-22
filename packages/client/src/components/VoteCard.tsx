@@ -1,3 +1,5 @@
+'use client';
+
 import { ParkingInfo } from '@/lib/api';
 import { useState } from 'react';
 
