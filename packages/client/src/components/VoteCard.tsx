@@ -74,19 +74,26 @@ export default function VoteCard({
                         <div className="flex flex-wrap items-center gap-2">
                             <span
                                 className={`text-xs px-2.5 py-1 rounded-lg border flex items-center gap-1.5 font-medium transition-colors ${parkingInfo.successRate !== null && parkingInfo.successRate >= 0.7
-                                        ? 'bg-green-50/80 border-green-200 text-green-700'
-                                        : parkingInfo.successRate !== null && parkingInfo.successRate >= 0.4
-                                            ? 'bg-yellow-50/80 border-yellow-200 text-yellow-700'
-                                            : 'bg-red-50/80 border-red-200 text-red-700'
+                                    ? 'bg-green-50/80 border-green-200 text-green-700'
+                                    : parkingInfo.successRate !== null && parkingInfo.successRate >= 0.4
+                                        ? 'bg-yellow-50/80 border-yellow-200 text-yellow-700'
+                                        : 'bg-red-50/80 border-red-200 text-red-700'
                                     }`}
                             >
                                 <span className="font-bold">🅿️ {Math.round((parkingInfo.successRate || 0) * 100)}%</span>
                                 <span className="w-px h-3 bg-current opacity-20"></span>
                                 <span className="text-[11px] opacity-90">{parkingInfo.recordCount}팀 방문</span>
                             </span>
-                            <span className="text-[10px] text-gray-400 border border-gray-100 px-1.5 py-0.5 rounded bg-gray-50/50">
-                                참고용
-                            </span>
+                            <div className="relative group">
+                                <span className="text-[10px] text-gray-400 border border-gray-100 px-1.5 py-0.5 rounded bg-gray-50/50 cursor-help">
+                                    참고용
+                                </span>
+                                {/* Tooltip */}
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-800 text-white text-[10px] rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 text-center pointer-events-none">
+                                    주차 성공률은 실제 방문자들이 남긴 기록을 바탕으로 계산된 참고용 수치입니다.
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <div className="mt-2 bg-gray-50/50 border border-gray-100 rounded-xl p-3 text-center">

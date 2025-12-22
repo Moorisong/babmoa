@@ -342,9 +342,16 @@ export default function HomePage() {
                                 )}
                               </span>
                               {place.parkingInfo.hasEnoughData && (
-                                <span className="text-[10px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded bg-gray-50">
-                                  참고용
-                                </span>
+                                <div className="relative group">
+                                  <span className="text-[10px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded bg-gray-50 cursor-help">
+                                    참고용
+                                  </span>
+                                  {/* Tooltip */}
+                                  <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-[10px] rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 text-center pointer-events-none">
+                                    주차 성공률은 실제 방문자들이 남긴 기록을 바탕으로 계산된 참고용 수치입니다.
+                                    <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-800"></div>
+                                  </div>
+                                </div>
                               )}
                             </>
                           )}
