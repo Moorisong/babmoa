@@ -38,7 +38,7 @@ export function setRecordedParking(roomId: string): void {
     localStorage.setItem(`parking_${roomId}`, 'true');
 }
 
-// 시간대 계산
+// 시간대 계산 (현재 시간 기준)
 export function getTimeSlot(): '평일_점심' | '평일_저녁' | '주말' {
     const now = new Date();
     const day = now.getDay();
@@ -55,6 +55,26 @@ export function getTimeSlot(): '평일_점심' | '평일_저녁' | '주말' {
     }
 
     // 평일 점심
+    return '평일_점심';
+}
+
+// 시간대 계산 (투표 마감 시간 기준) - 더 정확한 기본값
+export function getTimeSlotFromDeadline(deadline: string): '평일_점심' | '평일_저녁' | '주말' {
+    const deadlineDate = new Date(deadline);
+    const day = deadlineDate.getDay();
+    const hour = deadlineDate.getHours();
+
+    // 주말 (토, 일)
+    if (day === 0 || day === 6) {
+        return '주말';
+    }
+
+    // 저녁 (17시 이후)
+    if (hour >= 17) {
+        return '평일_저녁';
+    }
+
+    // 점심 (11시~14시) 또는 오후
     return '평일_점심';
 }
 

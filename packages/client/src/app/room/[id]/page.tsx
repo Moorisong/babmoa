@@ -138,9 +138,27 @@ export default function RoomPage() {
                         </div>
                         <h1 className="text-2xl font-bold text-gray-900 mb-2">투표 완료! ✨</h1>
                         <p className="text-gray-500">마감 후 결과를 확인하세요</p>
-                        <div className="inline-block mt-3 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-sm font-medium">
-                            ⏰ {getTimeRemaining(room.options.deadline)}
-                        </div>
+
+                        {timeRemaining === '마감됨' ? (
+                            <div className="mt-4 space-y-3">
+                                <div className="inline-block px-4 py-2 bg-red-50 text-red-600 rounded-full text-sm font-medium">
+                                    ⏰ 투표 마감됨
+                                </div>
+                                <div className="card p-4 bg-indigo-50 border-indigo-200">
+                                    <p className="text-indigo-700 font-medium mb-3">🎉 투표가 마감되었습니다!</p>
+                                    <button
+                                        onClick={() => router.push(`/room/${roomId}/result`)}
+                                        className="btn-primary w-full"
+                                    >
+                                        결과 보기 →
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="inline-block mt-3 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-sm font-medium">
+                                ⏰ {timeRemaining}
+                            </div>
+                        )}
                     </div>
 
                     <div className="mb-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
@@ -173,9 +191,26 @@ export default function RoomPage() {
             <main className="max-w-lg mx-auto px-4 py-8">
                 <div className="mb-8 animate-fade-in">
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">{room.title}</h1>
-                    <div className="inline-block px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-sm font-medium">
-                        ⏰ {timeRemaining}
-                    </div>
+                    {timeRemaining === '마감됨' ? (
+                        <div className="space-y-3">
+                            <div className="inline-block px-4 py-2 bg-red-50 text-red-600 rounded-full text-sm font-medium">
+                                ⏰ 투표 마감됨
+                            </div>
+                            <div className="card p-4 bg-indigo-50 border-indigo-200">
+                                <p className="text-indigo-700 font-medium mb-3">🎉 투표가 마감되었습니다!</p>
+                                <button
+                                    onClick={() => router.push(`/room/${roomId}/result`)}
+                                    className="btn-primary w-full"
+                                >
+                                    결과 보기 →
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="inline-block px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-sm font-medium">
+                            ⏰ {timeRemaining}
+                        </div>
+                    )}
                 </div>
 
                 {/* 투표 선택 */}

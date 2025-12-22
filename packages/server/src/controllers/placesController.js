@@ -1,6 +1,17 @@
 const kakaoMapService = require('../services/kakaoMapService');
 const ParkingStats = require('../models/ParkingStats');
 
+// 현재 시간대 계산
+function getCurrentTimeSlot() {
+    const now = new Date();
+    const day = now.getDay();
+    const hour = now.getHours();
+
+    if (day === 0 || day === 6) return '주말';
+    if (hour >= 18) return '평일_저녁';
+    return '평일_점심';
+}
+
 // GET /api/places/search - 장소 검색
 exports.searchPlaces = async (req, res) => {
     try {
@@ -23,19 +34,26 @@ exports.searchPlaces = async (req, res) => {
             shuffle: shuffle === 'true',
         });
 
-        // 주차 성공률 데이터 병합
+        // 주차 성공률 데이터 병합 (현재 시간대 기준)
         if (result.places && result.places.length > 0) {
             const placeIds = result.places.map(p => p.placeId);
-            const parkingStats = await ParkingStats.find({ placeId: { $in: placeIds } });
+            const currentTimeSlot = getCurrentTimeSlot();
+
+            // 현재 시간대 데이터 조회
+            const parkingStats = await ParkingStats.find({
+                placeId: { $in: placeIds },
+                timeSlot: currentTimeSlot
+            });
 
             const statsMap = new Map();
             parkingStats.forEach(stat => {
-                statsMap.set(stat.placeId, {
-                    parkingSuccessRate: stat.totalSuccess > 0
-                        ? Math.round((stat.totalSuccess / stat.totalAttempts) * 100)
-                        : null,
-                    totalParkingAttempts: stat.totalAttempts,
-                });
+                if (stat.totalAttempts > 0) {
+                    statsMap.set(stat.placeId, {
+                        parkingSuccessRate: Math.round(stat.successRate * 100),
+                        totalParkingAttempts: stat.totalAttempts,
+                        timeSlot: currentTimeSlot,
+                    });
+                }
             });
 
             result.places = result.places.map(place => ({

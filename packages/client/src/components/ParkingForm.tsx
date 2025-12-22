@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-type ParkingStep = 'available' | 'experience' | 'done';
+type ParkingStep = 'available' | 'experience';
 
 interface ParkingFormProps {
     onSubmit: (data: {
@@ -22,11 +22,9 @@ export default function ParkingForm({ onSubmit, loading = false }: ParkingFormPr
         if (available === false) {
             // 주차장 없음 → 바로 제출
             onSubmit({ parkingAvailable: false, parkingExperience: null });
-            setStep('done');
         } else if (available === null) {
             // 잘 모름 → unknown 처리
             onSubmit({ parkingAvailable: false, parkingExperience: null });
-            setStep('done');
         } else {
             // 주차장 있음 → 다음 질문
             setStep('experience');
@@ -35,22 +33,7 @@ export default function ParkingForm({ onSubmit, loading = false }: ParkingFormPr
 
     const handleExperienceSelect = (experience: string) => {
         onSubmit({ parkingAvailable: true, parkingExperience: experience });
-        setStep('done');
     };
-
-    if (step === 'done') {
-        return (
-            <div className="text-center py-8">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">기록 완료!</h3>
-                <p className="text-gray-500">소중한 경험을 공유해 주셔서 감사합니다</p>
-            </div>
-        );
-    }
 
     return (
         <div className="space-y-6">

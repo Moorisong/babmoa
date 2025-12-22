@@ -4,14 +4,23 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Header, ParkingForm } from '@/components';
 import { roomsApi, parkingApi } from '@/lib/api';
-import { getParticipantId, hasRecordedParking, setRecordedParking, getTimeSlot } from '@/lib/utils';
+import { getParticipantId, hasRecordedParking, setRecordedParking, getTimeSlotFromDeadline } from '@/lib/utils';
 
 interface Room {
     roomId: string;
     title: string;
+    options: { allowPass: boolean; deadline: string };
     result: { winnerPlaceId: string | null; decidedAt: string | null };
     places: Array<{ placeId: string; name: string; address: string; category: string }>;
 }
+
+type TimeSlot = '평일_점심' | '평일_저녁' | '주말';
+
+const TIME_SLOT_OPTIONS: { value: TimeSlot; label: string; emoji: string }[] = [
+    { value: '평일_점심', label: '점심', emoji: '🌤️' },
+    { value: '평일_저녁', label: '저녁', emoji: '🌙' },
+    { value: '주말', label: '주말', emoji: '🎉' },
+];
 
 export default function ParkingPage() {
     const params = useParams();
@@ -23,6 +32,7 @@ export default function ParkingPage() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [alreadyRecorded, setAlreadyRecorded] = useState(false);
+    const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot>('평일_점심');
 
     useEffect(() => {
         loadRoom();
@@ -35,6 +45,8 @@ export default function ParkingPage() {
 
         if (result.success && result.data) {
             setRoom(result.data);
+            // 투표 마감 시간 기준으로 기본 시간대 설정
+            setSelectedTimeSlot(getTimeSlotFromDeadline(result.data.options.deadline));
 
             // 마감 전이면 투표 페이지로
             if (new Date() < new Date(result.data.options.deadline)) {
@@ -61,7 +73,7 @@ export default function ParkingPage() {
                 parkingAvailable: data.parkingAvailable,
                 parkingExperience: data.parkingExperience,
                 date: new Date().toISOString(),
-                timeSlot: getTimeSlot(),
+                timeSlot: selectedTimeSlot,
             });
 
             if (result.success) {
@@ -141,12 +153,35 @@ export default function ParkingPage() {
             <main className="max-w-lg mx-auto px-4 py-8">
                 {/* 장소 정보 */}
                 {winnerPlace && (
-                    <div className="text-center mb-8">
+                    <div className="text-center mb-6">
                         <p className="text-sm text-gray-500 mb-2">방문한 장소</p>
                         <h1 className="text-2xl font-bold text-gray-900">{winnerPlace.name}</h1>
                         <p className="text-sm text-gray-500 mt-1">{winnerPlace.address}</p>
                     </div>
                 )}
+
+                {/* 시간대 선택 */}
+                <div className="card p-4 mb-4">
+                    <p className="text-sm font-medium text-gray-700 mb-3">
+                        🕐 언제 방문하셨나요?
+                        <span className="text-xs text-gray-400 ml-2">(확인해주세요)</span>
+                    </p>
+                    <div className="flex gap-2">
+                        {TIME_SLOT_OPTIONS.map((option) => (
+                            <button
+                                key={option.value}
+                                onClick={() => setSelectedTimeSlot(option.value)}
+                                className={`flex-1 py-3 rounded-xl font-medium transition-all ${selectedTimeSlot === option.value
+                                        ? 'bg-indigo-500 text-white shadow-md'
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    }`}
+                            >
+                                <span className="text-lg">{option.emoji}</span>
+                                <span className="block text-sm mt-1">{option.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
 
                 {/* 주차 경험 폼 */}
                 <div className="bg-white rounded-2xl border border-gray-200 p-6">
