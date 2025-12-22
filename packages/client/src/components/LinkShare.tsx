@@ -91,12 +91,25 @@ export default function LinkShare({ url, title = '회식 투표에 참여해주�
 
         try {
             Kakao.Share.sendDefault({
-                objectType: 'text',
-                text: `📍 ${title}\n\n어디서 먹을지 같이 정해요! 투표 마감 전에 참여해주세요 ⏰`,
-                link: {
-                    webUrl: shareUrl,
-                    mobileWebUrl: shareUrl,
+                objectType: 'feed',
+                content: {
+                    title: `📍 ${title}`,
+                    description: '어디서 먹을지 같이 정해요! 투표 마감 전에 참여해주세요 ⏰',
+                    imageUrl: `${baseUrl || 'https://babmoa-vote.vercel.app'}/og-image.png`,
+                    link: {
+                        webUrl: shareUrl,
+                        mobileWebUrl: shareUrl,
+                    },
                 },
+                buttons: [
+                    {
+                        title: '투표 참여하기',
+                        link: {
+                            webUrl: shareUrl,
+                            mobileWebUrl: shareUrl,
+                        },
+                    },
+                ],
             });
         } catch (error) {
             console.error('Kakao share error:', error);
