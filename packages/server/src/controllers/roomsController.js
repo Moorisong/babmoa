@@ -55,6 +55,12 @@ exports.getRoom = async (req, res) => {
             });
         }
 
+        // 자동 마감 체크
+        const isClosed = room.isExpired();
+        if (isClosed && !room.isClosed) {
+            await room.checkAndClose();
+        }
+
         res.json({
             success: true,
             data: {
@@ -63,6 +69,7 @@ exports.getRoom = async (req, res) => {
                 places: room.places,
                 options: room.options,
                 result: room.result,
+                isClosed: room.isExpired(),
                 createdAt: room.createdAt
             }
         });
@@ -98,8 +105,9 @@ exports.vote = async (req, res) => {
             });
         }
 
-        // 마감 확인
-        if (new Date() > new Date(room.options.deadline)) {
+        // 자동 마감 확인
+        if (room.isExpired()) {
+            await room.checkAndClose();
             return res.status(400).json({
                 success: false,
                 error: { code: 'VOTE_CLOSED', message: '투표가 마감되었습니다' }
@@ -148,13 +156,9 @@ exports.getResults = async (req, res) => {
             });
         }
 
-        // 마감 전에는 결과 비공개
-        if (new Date() < new Date(room.options.deadline)) {
-            return res.status(403).json({
-                success: false,
-                error: { code: 'VOTE_NOT_CLOSED', message: '투표가 마감되지 않았습니다' }
-            });
-        }
+        // 마감 여부와 상관없이 결과 확인 가능 (명세 변경)
+        // 자동 마감 체크
+        await room.checkAndClose();
 
         // 투표 집계
         const votes = await Vote.aggregate([

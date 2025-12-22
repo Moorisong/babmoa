@@ -45,6 +45,7 @@ export const roomsApi = {
         places: Array<{ placeId: string; name: string; address: string; category: string }>;
         options: { allowPass: boolean; deadline: string };
         result: { winnerPlaceId: string | null; decidedAt: string | null };
+        isClosed: boolean;
         createdAt: string;
     }>(`/rooms/${roomId}`),
 

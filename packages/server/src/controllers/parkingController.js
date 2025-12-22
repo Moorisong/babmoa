@@ -14,7 +14,7 @@ exports.recordParking = async (req, res) => {
             });
         }
 
-        // 투표방 조회 (마감 확인)
+        // 투표방 조회
         const room = await VoteRoom.findById(roomId);
         if (!room) {
             return res.status(404).json({
@@ -23,13 +23,9 @@ exports.recordParking = async (req, res) => {
             });
         }
 
-        // 투표 마감 전에는 주차 기록 불가
-        if (new Date() < new Date(room.options.deadline)) {
-            return res.status(400).json({
-                success: false,
-                error: { code: 'VOTE_NOT_CLOSED', message: '투표 마감 후에만 기록할 수 있습니다' }
-            });
-        }
+        // 마감 여부와 상관없이 주차 기록 허용 (명세 변경)
+        // 자동 마감 체크만 수행
+        await room.checkAndClose();
 
         // 주차 경험 처리 (주차장 없으면 null)
         const experience = parkingAvailable ? parkingExperience : null;

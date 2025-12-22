@@ -45,8 +45,8 @@ export default function RoomPage() {
         if (result.success && result.data) {
             setRoom(result.data);
 
-            // 마감됐으면 결과 페이지로
-            if (new Date() > new Date(result.data.options.deadline)) {
+            // isClosed 또는 마감 시간 확인하여 결과 페이지로
+            if (result.data.isClosed) {
                 router.replace(`/room/${roomId}/result`);
             }
         } else {
@@ -167,8 +167,8 @@ export default function RoomPage() {
                         <button
                             onClick={() => setSelectedPlaceId(null)}
                             className={`w-full p-4 rounded-xl border-2 transition-all text-left ${selectedPlaceId === null
-                                    ? 'border-gray-500 bg-gray-50'
-                                    : 'border-gray-200 hover:border-gray-300'
+                                ? 'border-gray-500 bg-gray-50'
+                                : 'border-gray-200 hover:border-gray-300'
                                 }`}
                         >
                             <span className="font-medium text-gray-600">🤷 상관없어요</span>
