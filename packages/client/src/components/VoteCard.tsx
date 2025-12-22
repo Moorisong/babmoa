@@ -69,31 +69,32 @@ export default function VoteCard({
 
             {/* 주차 정보 표시 */}
             {parkingInfo && (
-                <div className="flex flex-wrap items-center gap-1 mb-2">
-                    <span
-                        className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 ${!parkingInfo.hasEnoughData
-                            ? 'bg-gray-50 border-gray-200 text-gray-400'
-                            : parkingInfo.successRate !== null && parkingInfo.successRate >= 0.7
-                                ? 'bg-green-50 border-green-200 text-green-700'
-                                : parkingInfo.successRate !== null && parkingInfo.successRate >= 0.4
-                                    ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
-                                    : 'bg-red-50 border-red-200 text-red-700'
-                            }`}
-                    >
-                        {parkingInfo.hasEnoughData ? (
-                            <>
-                                <span className="font-semibold">🅿️ {Math.round((parkingInfo.successRate || 0) * 100)}%</span>
-                                <span className="mx-1 opacity-40">|</span>
-                                <span>{parkingInfo.recordCount}건</span>
-                            </>
-                        ) : (
-                            <span>🅿️ 데이터 부족</span>
-                        )}
-                    </span>
-                    {parkingInfo.hasEnoughData && (
-                        <span className="text-[10px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded bg-gray-50">
-                            참고용
-                        </span>
+                <div className="mt-2">
+                    {parkingInfo.hasEnoughData ? (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span
+                                className={`text-xs px-2.5 py-1 rounded-lg border flex items-center gap-1.5 font-medium transition-colors ${parkingInfo.successRate !== null && parkingInfo.successRate >= 0.7
+                                        ? 'bg-green-50/80 border-green-200 text-green-700'
+                                        : parkingInfo.successRate !== null && parkingInfo.successRate >= 0.4
+                                            ? 'bg-yellow-50/80 border-yellow-200 text-yellow-700'
+                                            : 'bg-red-50/80 border-red-200 text-red-700'
+                                    }`}
+                            >
+                                <span className="font-bold">🅿️ {Math.round((parkingInfo.successRate || 0) * 100)}%</span>
+                                <span className="w-px h-3 bg-current opacity-20"></span>
+                                <span className="text-[11px] opacity-90">{parkingInfo.recordCount}팀 방문</span>
+                            </span>
+                            <span className="text-[10px] text-gray-400 border border-gray-100 px-1.5 py-0.5 rounded bg-gray-50/50">
+                                참고용
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="mt-2 bg-gray-50/50 border border-gray-100 rounded-xl p-3 text-center">
+                            <p className="text-xs text-gray-400 mb-0.5">아직 주차 기록이 충분하지 않아요 ☁️</p>
+                            <p className="text-xs text-indigo-500 font-medium">
+                                방문 후 주차 경험을 공유해주세요!
+                            </p>
+                        </div>
                     )}
                 </div>
             )}

@@ -260,7 +260,7 @@ export default function HomePage() {
             <span className="text-xs text-gray-400">현재 마포구 지역만 지원합니다</span>
           </div>
 
-          {/* 카테고리 필터 */}
+          {/* 카테고리 필터 (복구) */}
           <div className="flex gap-2 mb-3 overflow-x-auto pb-2 scrollbar-hide">
             {CATEGORIES.map((cat) => (
               <button
@@ -276,13 +276,18 @@ export default function HomePage() {
             ))}
           </div>
 
+          {/* 정렬 안내 (고정) */}
+          <div className="flex items-center gap-1 mb-4 text-xs text-indigo-600 font-medium bg-indigo-50 px-2 py-1 rounded inline-block">
+            <span>✨ 주차 데이터 있는 식당 우선 · 가까운 순</span>
+          </div>
+
           <div className="relative">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => searchResults && searchResults.length > 0 && setShowResults(true)}
-              placeholder="메뉴나 식당 이름으로 검색해보세요"
+              placeholder="가게 이름, 지역 이름, 메뉴 등"
               className="input-field pr-10"
             />
             {searching && (
