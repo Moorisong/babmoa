@@ -282,7 +282,7 @@ export default function HomePage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => searchResults && searchResults.length > 0 && setShowResults(true)}
-              placeholder="지역 또는 장소 이름 검색 (예: 강남역)"
+              placeholder="메뉴나 식당 이름으로 검색해보세요"
               className="input-field pr-10"
             />
             {searching && (

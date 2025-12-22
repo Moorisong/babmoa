@@ -106,9 +106,9 @@ async function searchPlaces(keyword, options = {}) {
         searchKeyword = `${searchKeyword} ${categoryKeyword}`;
     }
 
-    // 캐시 키 생성
+    // 캐시 키 생성 (v2: 주소 필터링 적용)
     const cacheKey = cacheService.getSearchCacheKey(
-        'mapo',
+        'mapo:v2',
         `${searchKeyword}:${page}:${size}:${category}`
     );
 
@@ -136,11 +136,27 @@ async function searchPlaces(keyword, options = {}) {
 
     const data = await callKakaoApi('/search/keyword.json', params);
 
+    console.log(`[API 결과] 전체: ${data.documents.length}건`);
+
     // 음식점, 카페, 술집만 필터링
     const foodCategories = ['음식점', '카페', '술집'];
-    const filteredDocs = data.documents.filter(doc =>
-        foodCategories.includes(doc.category_group_name)
-    );
+    const filteredDocs = data.documents.filter(doc => {
+        // 카테고리 필터
+        if (!foodCategories.includes(doc.category_group_name)) return false;
+
+        // 마포구 지역 필터 (주소에 '마포구'가 포함되어야 함)
+        const address = doc.road_address_name || doc.address_name || '';
+        const isMapo = address.includes('마포구');
+
+        if (!isMapo) {
+            console.log(`[필터링 제외] ${doc.place_name}: ${address} (마포구 아님)`);
+            return false;
+        }
+
+        return true;
+    });
+
+    console.log(`[필터 결과] ${filteredDocs.length}건 유효`);
 
     // 중복 제거 (placeId 기준)
     const seen = new Set();
