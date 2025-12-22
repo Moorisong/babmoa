@@ -243,6 +243,12 @@ export default function HomePage() {
             📍 후보 장소 검색
           </label>
 
+          {/* 마포구 지역 제한 안내 */}
+          <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+            <span className="text-amber-600">📍</span>
+            <span className="text-sm text-amber-700">현재 마포구 지역만 서비스 중입니다</span>
+          </div>
+
           {/* 카테고리 필터 */}
           <div className="flex gap-2 mb-3 overflow-x-auto pb-2 scrollbar-hide">
             {CATEGORIES.map((cat) => (
@@ -300,12 +306,12 @@ export default function HomePage() {
                           {place.parkingInfo && (
                             <span
                               className={`text-xs px-2 py-0.5 rounded-full ${!place.parkingInfo.hasEnoughData
-                                  ? 'bg-gray-100 text-gray-400'
-                                  : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.7
-                                    ? 'bg-green-100 text-green-700'
-                                    : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.4
-                                      ? 'bg-yellow-100 text-yellow-700'
-                                      : 'bg-red-100 text-red-700'
+                                ? 'bg-gray-100 text-gray-400'
+                                : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.7
+                                  ? 'bg-green-100 text-green-700'
+                                  : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.4
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-red-100 text-red-700'
                                 }`}
                               title="이 정보는 이전 방문 기록 기반 참고용입니다"
                             >

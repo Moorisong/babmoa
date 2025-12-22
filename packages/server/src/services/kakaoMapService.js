@@ -69,13 +69,12 @@ async function callKakaoApi(endpoint, params = {}) {
  * @param {number} options.page - 페이지 번호
  * @param {number} options.size - 결과 개수
  * @param {boolean} options.shuffle - 결과 랜덤 셔플
- * @param {string} options.x - 경도
- * @param {string} options.y - 위도
+ * @param {string} options.x - 경도 (무시됨, 마포구로 고정)
+ * @param {string} options.y - 위도 (무시됨, 마포구로 고정)
  * @param {number} options.radius - 반경 (m)
  */
 async function searchPlaces(keyword, options = {}) {
     const {
-        x, y,
         radius = 5000,
         page = 1,
         size = 15,
@@ -83,22 +82,33 @@ async function searchPlaces(keyword, options = {}) {
         shuffle = false
     } = options;
 
+    // 마포구 중심 좌표 (홍대입구역 기준)
+    const MAPO_CENTER = {
+        x: '126.9246033',
+        y: '37.5571519'
+    };
+
     // 카테고리 키워드 추가
     const categoryKeyword = CATEGORY_MAP[category] || '';
     let searchKeyword = keyword;
 
+    // 마포구 키워드가 없으면 추가
+    if (!keyword.includes('마포') && !keyword.includes('홍대') && !keyword.includes('합정') && !keyword.includes('망원') && !keyword.includes('연남')) {
+        searchKeyword = `마포구 ${keyword}`;
+    }
+
     // 맛집/음식점/식당 키워드가 없으면 추가
-    if (!keyword.includes('맛집') && !keyword.includes('음식점') && !keyword.includes('식당')) {
+    if (!searchKeyword.includes('맛집') && !searchKeyword.includes('음식점') && !searchKeyword.includes('식당')) {
         searchKeyword = categoryKeyword
-            ? `${keyword} ${categoryKeyword}`
-            : `${keyword} 맛집`;
-    } else if (categoryKeyword && !keyword.includes(categoryKeyword)) {
-        searchKeyword = `${keyword} ${categoryKeyword}`;
+            ? `${searchKeyword} ${categoryKeyword}`
+            : `${searchKeyword} 맛집`;
+    } else if (categoryKeyword && !searchKeyword.includes(categoryKeyword)) {
+        searchKeyword = `${searchKeyword} ${categoryKeyword}`;
     }
 
     // 캐시 키 생성
     const cacheKey = cacheService.getSearchCacheKey(
-        `${x || 'default'},${y || 'default'}`,
+        'mapo',
         `${searchKeyword}:${page}:${size}:${category}`
     );
 
@@ -118,14 +128,11 @@ async function searchPlaces(keyword, options = {}) {
         query: searchKeyword,
         page,
         size: 15,
+        x: MAPO_CENTER.x,
+        y: MAPO_CENTER.y,
+        radius,
+        sort: 'distance',
     };
-
-    if (x && y) {
-        params.x = x;
-        params.y = y;
-        params.radius = radius;
-        params.sort = 'distance';
-    }
 
     const data = await callKakaoApi('/search/keyword.json', params);
 
