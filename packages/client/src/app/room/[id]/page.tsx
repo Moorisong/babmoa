@@ -44,8 +44,6 @@ export default function RoomPage() {
 
         if (result.success && result.data) {
             setRoom(result.data);
-
-            // isClosed 또는 마감 시간 확인하여 결과 페이지로
             if (result.data.isClosed) {
                 router.replace(`/room/${roomId}/result`);
             }
@@ -83,10 +81,13 @@ export default function RoomPage() {
         return (
             <>
                 <Header />
-                <main className="max-w-lg mx-auto px-4 py-8 text-center">
-                    <div className="animate-pulse">
-                        <div className="h-8 bg-gray-200 rounded mb-4 w-3/4 mx-auto"></div>
-                        <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                <main className="max-w-lg mx-auto px-4 py-8">
+                    <div className="space-y-4">
+                        <div className="h-8 shimmer rounded-lg w-3/4"></div>
+                        <div className="h-4 shimmer rounded-lg w-1/2"></div>
+                        <div className="card p-6 shimmer h-24"></div>
+                        <div className="card p-6 shimmer h-24"></div>
+                        <div className="card p-6 shimmer h-24"></div>
                     </div>
                 </main>
             </>
@@ -98,7 +99,10 @@ export default function RoomPage() {
             <>
                 <Header />
                 <main className="max-w-lg mx-auto px-4 py-8 text-center">
-                    <p className="text-red-500">{error || '오류가 발생했습니다'}</p>
+                    <div className="card p-8 animate-fade-in">
+                        <p className="text-4xl mb-4">😢</p>
+                        <p className="text-red-500 font-medium">{error || '오류가 발생했습니다'}</p>
+                    </div>
                 </main>
             </>
         );
@@ -110,33 +114,38 @@ export default function RoomPage() {
             <>
                 <Header />
                 <main className="max-w-lg mx-auto px-4 py-8">
-                    <div className="text-center mb-8">
-                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <div className="text-center mb-8 animate-fade-in">
+                        <div className="success-circle mx-auto mb-4 animate-scale-in">
+                            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
-                        <h1 className="text-2xl font-bold text-gray-900 mb-2">투표 완료!</h1>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-2">투표 완료! ✨</h1>
                         <p className="text-gray-500">마감 후 결과를 확인하세요</p>
-                        <p className="text-sm text-blue-500 mt-2">{getTimeRemaining(room.options.deadline)}</p>
+                        <div className="inline-block mt-3 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-sm font-medium">
+                            ⏰ {getTimeRemaining(room.options.deadline)}
+                        </div>
                     </div>
 
-                    <div className="mb-6">
+                    <div className="mb-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
                         <h2 className="text-lg font-bold text-gray-900 mb-4">{room.title}</h2>
                         <div className="space-y-3">
-                            {room.places.map((place) => (
+                            {room.places.map((place, index) => (
                                 <VoteCard
                                     key={place.placeId}
                                     {...place}
                                     selected={false}
                                     onSelect={() => { }}
                                     disabled
+                                    index={index}
                                 />
                             ))}
                         </div>
                     </div>
 
-                    <LinkShare title={room.title} />
+                    <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                        <LinkShare title={room.title} />
+                    </div>
                 </main>
             </>
         );
@@ -146,19 +155,22 @@ export default function RoomPage() {
         <>
             <Header />
             <main className="max-w-lg mx-auto px-4 py-8">
-                <div className="mb-6">
+                <div className="mb-8 animate-fade-in">
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">{room.title}</h1>
-                    <p className="text-sm text-blue-500">{getTimeRemaining(room.options.deadline)}</p>
+                    <div className="inline-block px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-sm font-medium">
+                        ⏰ {getTimeRemaining(room.options.deadline)}
+                    </div>
                 </div>
 
                 {/* 투표 선택 */}
                 <div className="space-y-3 mb-6">
-                    {room.places.map((place) => (
+                    {room.places.map((place, index) => (
                         <VoteCard
                             key={place.placeId}
                             {...place}
                             selected={selectedPlaceId === place.placeId}
                             onSelect={setSelectedPlaceId}
+                            index={index}
                         />
                     ))}
 
@@ -166,12 +178,16 @@ export default function RoomPage() {
                     {room.options.allowPass && (
                         <button
                             onClick={() => setSelectedPlaceId(null)}
-                            className={`w-full p-4 rounded-xl border-2 transition-all text-left ${selectedPlaceId === null
-                                ? 'border-gray-500 bg-gray-50'
-                                : 'border-gray-200 hover:border-gray-300'
+                            className={`card w-full p-4 text-left transition-all animate-slide-up ${selectedPlaceId === null
+                                    ? 'card-selected !border-gray-500 !bg-gray-50'
+                                    : ''
                                 }`}
+                            style={{ animationDelay: `${room.places.length * 0.1}s` }}
                         >
-                            <span className="font-medium text-gray-600">🤷 상관없어요</span>
+                            <span className="font-medium text-gray-600 flex items-center gap-2">
+                                <span className="text-xl">🤷</span>
+                                상관없어요
+                            </span>
                         </button>
                     )}
                 </div>
@@ -180,9 +196,20 @@ export default function RoomPage() {
                 <button
                     onClick={handleVote}
                     disabled={submitting || (selectedPlaceId === undefined)}
-                    className="w-full py-4 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full btn-primary animate-slide-up"
+                    style={{ animationDelay: `${(room.places.length + 1) * 0.1}s` }}
                 >
-                    {submitting ? '투표 중...' : '투표하기'}
+                    {submitting ? (
+                        <span className="flex items-center justify-center gap-2">
+                            <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            투표 중...
+                        </span>
+                    ) : (
+                        '✋ 투표하기'
+                    )}
                 </button>
             </main>
         </>

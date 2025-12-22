@@ -10,6 +10,7 @@ interface VoteCardProps {
     voteCount?: number;
     showCount?: boolean;
     disabled?: boolean;
+    index?: number;
 }
 
 export default function VoteCard({
@@ -22,48 +23,61 @@ export default function VoteCard({
     voteCount = 0,
     showCount = false,
     disabled = false,
+    index = 0,
 }: VoteCardProps) {
     return (
         <div
             onClick={() => !disabled && onSelect(placeId)}
             className={`
-        relative p-4 rounded-xl border-2 transition-all cursor-pointer
-        ${selected
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 bg-white hover:border-gray-300'
-                }
-        ${disabled ? 'opacity-60 cursor-not-allowed' : ''}
-      `}
+                vote-card card p-4 transition-all
+                ${selected ? 'card-selected !border-indigo-500 !bg-indigo-50/50' : ''}
+                ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
+                animate-slide-up
+            `}
+            style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'backwards' }}
         >
             {/* 카테고리 뱃지 */}
-            <span className="inline-block px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full mb-2">
+            <span className="inline-block px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-full mb-3">
                 {category}
             </span>
 
             {/* 장소 이름 */}
-            <h3 className="text-lg font-bold text-gray-900 mb-1">{name}</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+                {name}
+                {selected && (
+                    <span className="text-indigo-500">✓</span>
+                )}
+            </h3>
 
             {/* 주소 */}
-            <p className="text-sm text-gray-500">{address}</p>
+            <p className="text-sm text-gray-500 flex items-center gap-1">
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {address}
+            </p>
 
             {/* 투표 수 표시 */}
             {showCount && (
-                <div className="mt-3 flex items-center gap-2">
-                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="mt-4 flex items-center gap-3">
+                    <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-blue-500 transition-all"
-                            style={{ width: `${Math.min(voteCount * 10, 100)}%` }}
+                            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 ease-out rounded-full"
+                            style={{ width: `${Math.min(voteCount * 20, 100)}%` }}
                         />
                     </div>
-                    <span className="text-sm font-medium text-gray-700">{voteCount}표</span>
+                    <span className="text-sm font-bold text-indigo-600 min-w-[3rem] text-right">
+                        {voteCount}표
+                    </span>
                 </div>
             )}
 
-            {/* 선택 체크 */}
+            {/* 선택 인디케이터 */}
             {selected && (
-                <div className="absolute top-3 right-3 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                <div className="absolute top-3 right-3 w-7 h-7 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg animate-scale-in">
                     <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                 </div>
             )}
