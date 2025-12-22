@@ -85,6 +85,14 @@ export const parkingApi = {
 };
 
 // 장소 검색 API (카카오맵)
+export interface ParkingInfo {
+    parkingAvailable: boolean | null;
+    successRate: number | null;
+    recordCount: number;
+    timeSlot: '평일_점심' | '평일_저녁' | '주말';
+    hasEnoughData: boolean;
+}
+
 export interface KakaoPlace {
     placeId: string;
     name: string;
@@ -94,8 +102,7 @@ export interface KakaoPlace {
     phone: string;
     x: string;
     y: string;
-    parkingSuccessRate?: number | null;
-    totalParkingAttempts?: number;
+    parkingInfo?: ParkingInfo | null;
 }
 
 export interface PlaceSearchOptions {
@@ -122,7 +129,7 @@ export const placesApi = {
 
         return fetchApi<{
             places: KakaoPlace[];
-            meta: { totalCount: number; isEnd: boolean; currentPage: number };
+            meta: { totalCount: number; isEnd: boolean; currentPage: number; currentTimeSlot?: string };
         }>(`/places/search?${params.toString()}`);
     },
 

@@ -297,12 +297,21 @@ export default function HomePage() {
                         <p className="text-sm text-gray-500 truncate">{place.address}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-xs text-indigo-500">{place.category}</span>
-                          {place.parkingSuccessRate !== null && place.parkingSuccessRate !== undefined && (
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${place.parkingSuccessRate >= 70 ? 'bg-green-100 text-green-700' :
-                              place.parkingSuccessRate >= 40 ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-red-100 text-red-700'
-                              }`}>
-                              🅿️ {place.parkingSuccessRate}%
+                          {place.parkingInfo && (
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded-full ${!place.parkingInfo.hasEnoughData
+                                  ? 'bg-gray-100 text-gray-400'
+                                  : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.7
+                                    ? 'bg-green-100 text-green-700'
+                                    : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.4
+                                      ? 'bg-yellow-100 text-yellow-700'
+                                      : 'bg-red-100 text-red-700'
+                                }`}
+                              title="이 정보는 이전 방문 기록 기반 참고용입니다"
+                            >
+                              {place.parkingInfo.hasEnoughData
+                                ? `🅿️ ${Math.round((place.parkingInfo.successRate || 0) * 100)}%`
+                                : '🅿️ 데이터 부족'}
                             </span>
                           )}
                         </div>

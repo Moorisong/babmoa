@@ -1,6 +1,9 @@
 const kakaoMapService = require('../services/kakaoMapService');
 const ParkingStats = require('../models/ParkingStats');
 
+// 최소 기록 수 기준
+const MIN_RECORD_COUNT = 3;
+
 // 현재 시간대 계산
 function getCurrentTimeSlot() {
     const now = new Date();
@@ -34,7 +37,7 @@ exports.searchPlaces = async (req, res) => {
             shuffle: shuffle === 'true',
         });
 
-        // 주차 성공률 데이터 병합 (현재 시간대 기준)
+        // 주차 정보 병합 (현재 시간대 기준)
         if (result.places && result.places.length > 0) {
             const placeIds = result.places.map(p => p.placeId);
             const currentTimeSlot = getCurrentTimeSlot();
@@ -47,20 +50,25 @@ exports.searchPlaces = async (req, res) => {
 
             const statsMap = new Map();
             parkingStats.forEach(stat => {
-                if (stat.totalAttempts > 0) {
-                    statsMap.set(stat.placeId, {
-                        parkingSuccessRate: Math.round(stat.successRate * 100),
-                        totalParkingAttempts: stat.totalAttempts,
+                const hasEnoughData = stat.totalAttempts >= MIN_RECORD_COUNT;
+                statsMap.set(stat.placeId, {
+                    parkingInfo: {
+                        parkingAvailable: stat.successCount > 0 ? true : (stat.failCount > 0 ? false : null),
+                        successRate: hasEnoughData ? stat.successRate : null,
+                        recordCount: stat.totalAttempts,
                         timeSlot: currentTimeSlot,
-                    });
-                }
+                        hasEnoughData,
+                    }
+                });
             });
 
             result.places = result.places.map(place => ({
                 ...place,
-                parkingSuccessRate: statsMap.get(place.placeId)?.parkingSuccessRate || null,
-                totalParkingAttempts: statsMap.get(place.placeId)?.totalParkingAttempts || 0,
+                parkingInfo: statsMap.get(place.placeId)?.parkingInfo || null,
             }));
+
+            // 현재 시간대 메타 정보 추가
+            result.meta.currentTimeSlot = currentTimeSlot;
         }
 
         res.json({
