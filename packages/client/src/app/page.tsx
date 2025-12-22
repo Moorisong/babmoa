@@ -25,6 +25,28 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
 
+  /* Portal Mounting Logic */
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const [tooltip, setTooltip] = useState<{ show: boolean; x: number; y: number; text: string } | null>(null);
+
+  const handleTooltipEnter = (e: React.MouseEvent, text: string) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({
+      show: true,
+      x: rect.left + rect.width / 2, // Center horizontally
+      y: rect.top - 10, // Above the element
+      text
+    });
+  };
+
+  const handleTooltipLeave = () => {
+    setTooltip(null);
+  };
+
   // 장소 검색
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<KakaoPlace[]>([]);
@@ -208,28 +230,6 @@ export default function HomePage() {
       </>
     );
   }
-
-  /* Portal Mounting Logic */
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const [tooltip, setTooltip] = useState<{ show: boolean; x: number; y: number; text: string } | null>(null);
-
-  const handleTooltipEnter = (e: React.MouseEvent, text: string) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTooltip({
-      show: true,
-      x: rect.left + rect.width / 2, // Center horizontally
-      y: rect.top - 10, // Above the element
-      text
-    });
-  };
-
-  const handleTooltipLeave = () => {
-    setTooltip(null);
-  };
 
   return (
     <>
