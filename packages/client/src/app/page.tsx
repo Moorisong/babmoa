@@ -215,11 +215,11 @@ export default function HomePage() {
         {/* 히어로 섹션 */}
         <div className="text-center mb-10 animate-fade-in">
           <h1 className="text-3xl font-bold mb-3">
-            <span className="gradient-text">마포구 주차 성공률로</span>
-            <span className="text-gray-900"> 고른 식당</span>
+            <span className="gradient-text">마포구 전용</span>
+            <span className="text-gray-900"> 오늘의 회식 PICK</span>
           </h1>
           <p className="text-lg text-gray-700 font-medium mb-1">
-            실제 방문 기록 기반 · 주차장 정보까지 확인 가능
+            실제 방문 기록 기반으로 <span className="text-indigo-600 font-bold">'주차장 정보'</span>까지 확인할 수 있어요.
           </p>
           <p className="text-sm text-gray-500">
             데이터가 쌓인 장소에 한해 제공 (참고용)
@@ -243,7 +243,7 @@ export default function HomePage() {
         {/* 장소 검색 */}
         <div className="mb-6 animate-slide-up relative z-50" style={{ animationDelay: '0.15s' }} ref={searchRef}>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            📍 후보 장소 검색
+            🔎 후보 장소 검색
           </label>
 
           {/* 마포구 지역 제한 안내 */}
@@ -318,12 +318,12 @@ export default function HomePage() {
                             <>
                               <span
                                 className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 ${!place.parkingInfo.hasEnoughData
-                                    ? 'bg-gray-50 border-gray-200 text-gray-400'
-                                    : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.7
-                                      ? 'bg-green-50 border-green-200 text-green-700'
-                                      : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.4
-                                        ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
-                                        : 'bg-red-50 border-red-200 text-red-700'
+                                  ? 'bg-gray-50 border-gray-200 text-gray-400'
+                                  : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.7
+                                    ? 'bg-green-50 border-green-200 text-green-700'
+                                    : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.4
+                                      ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
+                                      : 'bg-red-50 border-red-200 text-red-700'
                                   }`}
                               >
                                 {place.parkingInfo.hasEnoughData ? (
