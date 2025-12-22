@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Header, VoteCard, LinkShare } from '@/components';
-import { roomsApi } from '@/lib/api';
+import { roomsApi, ParkingInfo } from '@/lib/api';
 import { hasRecordedParking } from '@/lib/utils';
 
 interface Place {
@@ -13,6 +13,7 @@ interface Place {
     address: string;
     category: string;
     categoryDetail?: string;
+    parkingInfo?: ParkingInfo | null;
 }
 
 interface Room {

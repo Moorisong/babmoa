@@ -61,6 +61,43 @@ exports.getRoom = async (req, res) => {
             await room.checkAndClose();
         }
 
+        // 주차 정보 병합 (현재 시간대 기준)
+        const placesWithParking = room.places.map(p => p.toObject ? p.toObject() : p);
+        if (placesWithParking.length > 0) {
+            const ParkingStats = require('../models/ParkingStats');
+
+            // 현재 시간대 계산
+            const now = new Date();
+            const day = now.getDay();
+            const hour = now.getHours();
+            let currentTimeSlot = '평일_점심';
+            if (day === 0 || day === 6) currentTimeSlot = '주말';
+            else if (hour >= 18) currentTimeSlot = '평일_저녁';
+
+            const placeIds = placesWithParking.map(p => p.placeId);
+            const parkingStats = await ParkingStats.find({
+                placeId: { $in: placeIds },
+                timeSlot: currentTimeSlot
+            });
+
+            const statsMap = new Map();
+            parkingStats.forEach(stat => {
+                const hasEnoughData = stat.totalAttempts >= 3; // 최소 3건
+                statsMap.set(stat.placeId, {
+                    parkingAvailable: stat.successCount > 0 ? true : (stat.failCount > 0 ? false : null),
+                    successRate: hasEnoughData ? stat.successRate : null,
+                    recordCount: stat.totalAttempts,
+                    timeSlot: currentTimeSlot,
+                    hasEnoughData,
+                });
+            });
+
+            room.places = placesWithParking.map(place => ({
+                ...place,
+                parkingInfo: statsMap.get(place.placeId) || null
+            }));
+        }
+
         res.json({
             success: true,
             data: {

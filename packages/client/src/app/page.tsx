@@ -215,11 +215,14 @@ export default function HomePage() {
         {/* 히어로 섹션 */}
         <div className="text-center mb-10 animate-fade-in">
           <h1 className="text-3xl font-bold mb-3">
-            <span className="gradient-text">회식 장소</span>
-            <span className="text-gray-900">, 투표로 정하자!</span>
+            <span className="gradient-text">마포구 주차 성공률로</span>
+            <span className="text-gray-900"> 고른 식당</span>
           </h1>
-          <p className="text-gray-500">
-            링크 하나로 팀원들과 빠르게 장소를 결정해보세요
+          <p className="text-lg text-gray-700 font-medium mb-1">
+            실제 방문 기록 기반 · 주차장 정보까지 확인 가능
+          </p>
+          <p className="text-sm text-gray-500">
+            데이터가 쌓인 장소에 한해 제공 (참고용)
           </p>
         </div>
 
@@ -244,9 +247,17 @@ export default function HomePage() {
           </label>
 
           {/* 마포구 지역 제한 안내 */}
-          <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-            <span className="text-amber-600">📍</span>
-            <span className="text-sm text-amber-700">현재 마포구 지역만 서비스 중입니다</span>
+          <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg">
+            <span className="text-indigo-600">ℹ️</span>
+            <span className="text-sm text-indigo-700">마포구 실제 방문 기록을 기반으로 주차 정보를 제공합니다</span>
+          </div>
+
+          {/* 지역 고정 표시 */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="px-3 py-1.5 bg-gray-100 rounded-full text-sm font-medium text-gray-600 flex items-center gap-1">
+              📍 마포구
+            </div>
+            <span className="text-xs text-gray-400">현재 마포구 지역만 지원합니다</span>
           </div>
 
           {/* 카테고리 필터 */}
@@ -301,24 +312,36 @@ export default function HomePage() {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">{place.name}</p>
                         <p className="text-sm text-gray-500 truncate">{place.address}</p>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
                           <span className="text-xs text-indigo-500">{place.category}</span>
                           {place.parkingInfo && (
-                            <span
-                              className={`text-xs px-2 py-0.5 rounded-full ${!place.parkingInfo.hasEnoughData
-                                ? 'bg-gray-100 text-gray-400'
-                                : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.7
-                                  ? 'bg-green-100 text-green-700'
-                                  : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.4
-                                    ? 'bg-yellow-100 text-yellow-700'
-                                    : 'bg-red-100 text-red-700'
-                                }`}
-                              title="이 정보는 이전 방문 기록 기반 참고용입니다"
-                            >
-                              {place.parkingInfo.hasEnoughData
-                                ? `🅿️ ${Math.round((place.parkingInfo.successRate || 0) * 100)}%`
-                                : '🅿️ 데이터 부족'}
-                            </span>
+                            <>
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 ${!place.parkingInfo.hasEnoughData
+                                    ? 'bg-gray-50 border-gray-200 text-gray-400'
+                                    : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.7
+                                      ? 'bg-green-50 border-green-200 text-green-700'
+                                      : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.4
+                                        ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
+                                        : 'bg-red-50 border-red-200 text-red-700'
+                                  }`}
+                              >
+                                {place.parkingInfo.hasEnoughData ? (
+                                  <>
+                                    <span className="font-semibold">🅿️ {Math.round((place.parkingInfo.successRate || 0) * 100)}%</span>
+                                    <span className="mx-1 opacity-40">|</span>
+                                    <span>{place.parkingInfo.recordCount}건</span>
+                                  </>
+                                ) : (
+                                  <span>🅿️ 데이터 부족</span>
+                                )}
+                              </span>
+                              {place.parkingInfo.hasEnoughData && (
+                                <span className="text-[10px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded bg-gray-50">
+                                  참고용
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>

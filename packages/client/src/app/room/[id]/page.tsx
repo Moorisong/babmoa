@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Header, VoteCard, LinkShare } from '@/components';
-import { roomsApi } from '@/lib/api';
+import { roomsApi, ParkingInfo } from '@/lib/api';
 import { getParticipantId, hasVoted, setVoted, getTimeRemaining } from '@/lib/utils';
 
 interface Place {
@@ -12,6 +12,7 @@ interface Place {
     address: string;
     category: string;
     categoryDetail?: string;
+    parkingInfo?: ParkingInfo | null;
 }
 
 interface Room {

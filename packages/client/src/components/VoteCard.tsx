@@ -1,4 +1,4 @@
-'use client';
+import { ParkingInfo } from '@/lib/api';
 
 interface VoteCardProps {
     placeId: string;
@@ -12,6 +12,7 @@ interface VoteCardProps {
     showCount?: boolean;
     disabled?: boolean;
     index?: number;
+    parkingInfo?: ParkingInfo | null;
 }
 
 export default function VoteCard({
@@ -26,6 +27,7 @@ export default function VoteCard({
     showCount = false,
     disabled = false,
     index = 0,
+    parkingInfo,
 }: VoteCardProps) {
     // 카테고리 상세에서 마지막 항목만 추출 (예: "음식점 > 한식 > 해장국" → "해장국")
     const displayCategory = categoryDetail
@@ -57,13 +59,44 @@ export default function VoteCard({
             </h3>
 
             {/* 주소 */}
-            <p className="text-sm text-gray-500 flex items-center gap-1">
+            <p className="text-sm text-gray-500 flex items-center gap-1 mb-2">
                 <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 {address}
             </p>
+
+            {/* 주차 정보 표시 */}
+            {parkingInfo && (
+                <div className="flex flex-wrap items-center gap-1 mb-2">
+                    <span
+                        className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 ${!parkingInfo.hasEnoughData
+                            ? 'bg-gray-50 border-gray-200 text-gray-400'
+                            : parkingInfo.successRate !== null && parkingInfo.successRate >= 0.7
+                                ? 'bg-green-50 border-green-200 text-green-700'
+                                : parkingInfo.successRate !== null && parkingInfo.successRate >= 0.4
+                                    ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
+                                    : 'bg-red-50 border-red-200 text-red-700'
+                            }`}
+                    >
+                        {parkingInfo.hasEnoughData ? (
+                            <>
+                                <span className="font-semibold">🅿️ {Math.round((parkingInfo.successRate || 0) * 100)}%</span>
+                                <span className="mx-1 opacity-40">|</span>
+                                <span>{parkingInfo.recordCount}건</span>
+                            </>
+                        ) : (
+                            <span>🅿️ 데이터 부족</span>
+                        )}
+                    </span>
+                    {parkingInfo.hasEnoughData && (
+                        <span className="text-[10px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded bg-gray-50">
+                            참고용
+                        </span>
+                    )}
+                </div>
+            )}
 
             {/* 투표 수 표시 */}
             {showCount && (
