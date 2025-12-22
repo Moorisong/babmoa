@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     siteName: "밥모아",
     images: [
       {
-        url: "/og-image.png",
+        url: "https://babmoa-vote.vercel.app/og-image.png",
         width: 1200,
         height: 630,
         alt: "밥모아 - 회식 투표",
