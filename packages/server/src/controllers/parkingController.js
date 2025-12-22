@@ -1,4 +1,5 @@
 const { ParkingData, ParkingStats, VoteRoom } = require('../models');
+const { updateStatsOnNewRecord } = require('../services/aggregationService');
 
 // POST /api/parking - 주차 경험 기록
 exports.recordParking = async (req, res) => {
@@ -48,10 +49,8 @@ exports.recordParking = async (req, res) => {
             { upsert: true, new: true }
         );
 
-        // 통계 업데이트 (주차장 있는 경우만)
-        if (parkingAvailable && experience) {
-            await ParkingStats.updateStats(placeId, timeSlot, experience);
-        }
+        // 가중치 적용 통계 업데이트
+        await updateStatsOnNewRecord(parkingData);
 
         res.json({
             success: true,
