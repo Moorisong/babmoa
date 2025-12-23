@@ -120,45 +120,19 @@ exports.searchPlaces = async (req, res) => {
             } : null,
         }));
 
-        // 6. Manual Pagination (Slicing)
-        // 우리가 45개를 가져와서 재정렬했으므로, 요청된 page/size에 맞게 잘라서 줍니다.
-        // 주의: 클라이언트가 4페이지 이상을 요청하면 데이터가 없을 수 있음 (Deep Fetch 한계)
-        // UX상 45개 정도면 충분하다고 판단 (Top-ranked 추천 위주)
-
-        const pageNum = parseInt(page);
-        const sizeNum = parseInt(size);
-        const startIndex = (pageNum - 1) * sizeNum;
-        const endIndex = startIndex + sizeNum;
-
-        const slicedPlaces = allPlaces.slice(startIndex, endIndex);
-        const totalCount = allPlaces.length; // 사실상 45개(최대)가 전체라고 간주
-
-        if (slicedPlaces.length === 0 && pageNum > 1 && totalCount > 0) {
-            // 페이지 범위를 벗어난 경우
-            return res.json({
-                success: true,
-                data: {
-                    places: [],
-                    meta: {
-                        totalCount,
-                        pageableCount: totalCount,
-                        isEnd: true,
-                        currentPage: pageNum,
-                        currentTimeSlot
-                    }
-                }
-            });
-        }
+        // 6. 전체 결과 반환 (클라이언트에서 페이지네이션 + 필터링 처리)
+        // 45개 정도는 10KB 미만이라 한 번에 전송해도 무방
+        const totalCount = allPlaces.length;
 
         res.json({
             success: true,
             data: {
-                places: slicedPlaces,
+                places: allPlaces,
                 meta: {
                     totalCount,
                     pageableCount: totalCount,
-                    isEnd: endIndex >= totalCount, // 45개 다 보여줬으면 끝
-                    currentPage: pageNum,
+                    isEnd: true,
+                    currentPage: 1,
                     currentTimeSlot
                 }
             }
