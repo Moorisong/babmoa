@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useRef } from 'react';
 import { KakaoPlace } from '@/lib/api';
 
 interface PlaceBottomSheetProps {
@@ -34,6 +35,11 @@ export default function PlaceBottomSheet({
     onAddPlace,
     isAlreadyAdded
 }: PlaceBottomSheetProps) {
+    const [dragY, setDragY] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const startYRef = useRef(0);
+    const sheetRef = useRef<HTMLDivElement>(null);
+
     if (!place) return null;
 
     const parkingBadge = getParkingBadge(place);
@@ -44,6 +50,33 @@ export default function PlaceBottomSheet({
         yellow: 'bg-yellow-50 border-yellow-200 text-yellow-700',
         red: 'bg-red-50 border-red-200 text-red-700',
         gray: 'bg-gray-50 border-gray-200 text-gray-400',
+    };
+
+    // 터치 시작
+    const handleTouchStart = (e: React.TouchEvent) => {
+        startYRef.current = e.touches[0].clientY;
+        setIsDragging(true);
+    };
+
+    // 터치 이동
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging) return;
+        const currentY = e.touches[0].clientY;
+        const diff = currentY - startYRef.current;
+        // 아래로만 드래그 가능 (양수 값만)
+        if (diff > 0) {
+            setDragY(diff);
+        }
+    };
+
+    // 터치 종료
+    const handleTouchEnd = () => {
+        setIsDragging(false);
+        // 100px 이상 드래그하면 닫기
+        if (dragY > 100) {
+            onClose();
+        }
+        setDragY(0);
     };
 
     return (
@@ -57,16 +90,29 @@ export default function PlaceBottomSheet({
 
             {/* Bottom Sheet */}
             <div
-                className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'
+                ref={sheetRef}
+                className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl ${isDragging ? '' : 'transition-transform duration-300 ease-out'} ${isOpen ? 'translate-y-0' : 'translate-y-full'
                     }`}
-                style={{ maxHeight: '70vh' }}
+                style={{
+                    maxHeight: '70vh',
+                    transform: isOpen ? `translateY(${dragY}px)` : 'translateY(100%)'
+                }}
             >
-                {/* Handle */}
-                <div className="flex justify-center pt-3 pb-2">
+                {/* Handle - 스와이프 영역 */}
+                <div
+                    className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing touch-none"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                >
                     <div className="w-10 h-1 bg-gray-300 rounded-full" />
                 </div>
 
-                <div className="px-5 pb-6 overflow-y-auto" style={{ maxHeight: 'calc(70vh - 40px)' }}>
+                <div
+                    className="px-5 pb-6 overflow-y-auto overscroll-contain touch-pan-y"
+                    style={{ maxHeight: 'calc(70vh - 40px)' }}
+                    onTouchMove={(e) => e.stopPropagation()}
+                >
                     {/* 헤더 */}
                     <div className="flex items-start justify-between mb-4">
                         <div className="flex-1 min-w-0 pr-4">
@@ -140,8 +186,8 @@ export default function PlaceBottomSheet({
                         onClick={() => !isAlreadyAdded && onAddPlace(place)}
                         disabled={isAlreadyAdded}
                         className={`w-full py-3.5 rounded-xl font-semibold transition-all ${isAlreadyAdded
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                : 'btn-primary'
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'btn-primary'
                             }`}
                     >
                         {isAlreadyAdded ? '✓ 이미 추가됨' : '🗳️ 투표 후보로 추가'}
