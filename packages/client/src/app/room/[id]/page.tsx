@@ -56,6 +56,19 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
             locale: 'ko_KR',
             type: 'website',
         },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: [`${BASE_URL}/og-image.png`],
+        },
+        alternates: {
+            canonical: url,
+        },
+        robots: {
+            index: false,  // 투표방은 개별 색인 불필요
+            follow: true,
+        },
     };
 }
 
