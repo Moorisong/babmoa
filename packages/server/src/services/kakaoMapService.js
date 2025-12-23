@@ -160,13 +160,13 @@ async function searchPlaces(keyword, options = {}) {
             return SUPPORTED_DISTRICTS.some(d => address.includes(d));
         });
 
-        // 중복 제거
+        // 중복 제거 (slice 제거 - 전체 결과 반환)
         const seen = new Set();
         const uniqueDocs = filteredDocs.filter(doc => {
             if (seen.has(doc.id)) return false;
             seen.add(doc.id);
             return true;
-        }).slice(0, size);
+        });
 
         let places = uniqueDocs.map(doc => ({
             placeId: doc.id,

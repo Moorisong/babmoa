@@ -63,48 +63,39 @@ export default function HomePage() {
 
   // 장소 검색
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<KakaoPlace[]>([]);
+  const [searchResults, setSearchResults] = useState<KakaoPlace[]>([]); // 전체 결과 (최대 45개)
   const [searching, setSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [searchPage, setSearchPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [displayCount, setDisplayCount] = useState(15); // 화면에 표시할 개수
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null); // 지역 필터
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const DISTRICTS = ['관악구', '영등포구', '강남구'];
+  const PAGE_SIZE = 15;
 
-  // 검색 함수
-  const performSearch = async (query: string, category: string, page: number = 1, append: boolean = false) => {
+  // 검색 함수 (서버에서 전체 결과 받기)
+  const performSearch = async (query: string) => {
     if (query.trim().length < 2) {
       setSearchResults([]);
       setShowResults(false);
       return;
     }
 
-    if (page === 1) setSearching(true);
-    else setLoadingMore(true);
+    setSearching(true);
+    setDisplayCount(PAGE_SIZE); // 새 검색 시 표시 개수 초기화
 
     try {
-      const result = await placesApi.search(query, { category, page });
+      const result = await placesApi.search(query, {});
       if (result.success && result.data) {
-        const newPlaces = result.data.places;
-        if (append) {
-          setSearchResults(prev => [...prev, ...newPlaces]);
-        } else {
-          setSearchResults(newPlaces);
-        }
+        setSearchResults(result.data.places); // 전체 저장 (최대 45개)
         setShowResults(true);
-        setHasMore(!result.data.meta.isEnd && newPlaces.length >= 5);
-        setSearchPage(page);
       }
     } catch (error) {
       console.error('Search error:', error);
     } finally {
       setSearching(false);
-      setLoadingMore(false);
     }
   };
 
@@ -117,30 +108,28 @@ export default function HomePage() {
     if (searchQuery.trim().length < 2) {
       setSearchResults([]);
       setShowResults(false);
-      setSearchPage(1);
-      setHasMore(false);
+      setDisplayCount(PAGE_SIZE);
       return;
     }
 
     debounceRef.current = setTimeout(() => {
-      performSearch(searchQuery, selectedCategory, 1, false);
+      performSearch(searchQuery);
     }, 300);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery]);
 
-  // 카테고리 변경 시 재검색 (useEffect가 처리)
+  // 카테고리 변경 시
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
-    // useEffect의 selectedCategory 의존성이 자동으로 검색 트리거
+    setDisplayCount(PAGE_SIZE); // 필터 변경 시 표시 개수 초기화
   };
 
-  // 더보기
+  // 더보기 (클라이언트 페이지네이션)
   const loadMore = () => {
-    if (!hasMore || loadingMore) return;
-    performSearch(searchQuery, selectedCategory, searchPage + 1, true);
+    setDisplayCount(prev => prev + PAGE_SIZE);
   };
 
   // 외부 클릭 시 검색 결과 닫기
@@ -359,24 +348,46 @@ export default function HomePage() {
 
             {/* 검색 결과 드롭다운 */}
             {showResults && searchResults && searchResults.length > 0 && (() => {
-              const filteredResults = selectedDistrict
-                ? searchResults.filter(place => place.address.includes(selectedDistrict))
-                : searchResults;
+              // 클라이언트 필터링: 지역 + 카테고리
+              let filteredResults = searchResults;
+
+              if (selectedDistrict) {
+                filteredResults = filteredResults.filter(place => place.address.includes(selectedDistrict));
+              }
+
+              if (selectedCategory !== '전체') {
+                filteredResults = filteredResults.filter(place =>
+                  place.category?.includes(selectedCategory) ||
+                  place.categoryDetail?.includes(selectedCategory)
+                );
+              }
+
+              const activeFilters = [
+                selectedDistrict,
+                selectedCategory !== '전체' ? selectedCategory : null
+              ].filter(Boolean);
+
+              // 클라이언트 페이지네이션: displayCount만큼만 표시
+              const displayedResults = filteredResults.slice(0, displayCount);
+              const hasMore = displayCount < filteredResults.length;
 
               return (
                 <div className="absolute z-50 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-200 max-h-96 overflow-y-auto animate-fade-in">
                   {filteredResults.length === 0 ? (
                     <div className="p-6 text-center">
-                      <p className="text-gray-500">'{selectedDistrict}'에 해당하는 결과가 없습니다</p>
+                      <p className="text-gray-500">'{activeFilters.join(' + ')}'에 해당하는 결과가 없습니다</p>
                       <button
-                        onClick={() => setSelectedDistrict(null)}
+                        onClick={() => {
+                          setSelectedDistrict(null);
+                          setSelectedCategory('전체');
+                        }}
                         className="mt-2 text-sm text-indigo-600 hover:underline"
                       >
-                        전체 보기
+                        필터 초기화
                       </button>
                     </div>
                   ) : (
-                    filteredResults.map((place) => (
+                    displayedResults.map((place) => (
                       <button
                         key={place.placeId}
                         onClick={() => handleSelectPlace(place)}
@@ -444,20 +455,9 @@ export default function HomePage() {
                   {hasMore && (
                     <button
                       onClick={loadMore}
-                      disabled={loadingMore}
                       className="w-full py-3 text-center text-indigo-600 font-medium hover:bg-indigo-50 transition-colors border-t border-gray-100"
                     >
-                      {loadingMore ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
-                          로딩 중...
-                        </span>
-                      ) : (
-                        '더보기 ↓'
-                      )}
+                      더보기 ↓ ({filteredResults.length - displayCount}개 남음)
                     </button>
                   )}
                 </div>
