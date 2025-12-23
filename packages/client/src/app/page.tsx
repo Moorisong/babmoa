@@ -509,24 +509,59 @@ export default function HomePage() {
         </div>
 
         {/* 생성 버튼 */}
-        <button
-          onClick={handleSubmit}
-          disabled={loading || !title || places.length === 0 || !deadline}
-          className="w-full btn-primary animate-slide-up py-3"
-          style={{ animationDelay: '0.3s' }}
-        >
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              생성 중...
-            </span>
-          ) : (
-            '🚀 투표 만들기'
-          )}
-        </button>
+        {(() => {
+          const isDisabled = !title || places.length < 2 || !deadline;
+
+          return (
+            <button
+              onClick={() => {
+                if (loading) return;
+
+                // 순서대로 검증하고 토스트 표시
+                if (!title) {
+                  showToast('투표 제목을 입력해주세요');
+                  return;
+                }
+                if (places.length === 0) {
+                  showToast('장소를 선택해주세요');
+                  return;
+                }
+                if (places.length === 1) {
+                  showToast('장소를 하나 더 선택해주세요!');
+                  return;
+                }
+                if (!deadline) {
+                  showToast('마감 시간을 설정해주세요');
+                  return;
+                }
+                // 과거 시간 체크
+                if (new Date(deadline) <= new Date()) {
+                  showToast('마감 시간은 현재 시간 이후로 설정해주세요');
+                  return;
+                }
+
+                handleSubmit();
+              }}
+              className={`w-full btn-primary py-3 ${isDisabled ? 'cursor-not-allowed' : 'animate-slide-up'}`}
+              style={{
+                animationDelay: isDisabled ? undefined : '0.3s',
+                opacity: isDisabled ? 0.5 : 1,
+              }}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  생성 중...
+                </span>
+              ) : (
+                '🚀 투표 만들기'
+              )}
+            </button>
+          );
+        })()}
       </main>
 
       {/* Tooltip Portal */}
