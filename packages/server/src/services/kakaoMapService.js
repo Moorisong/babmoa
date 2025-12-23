@@ -2,6 +2,7 @@
  * 카카오맵 API 서비스
  * 장소 검색 및 상세 정보 조회
  * 캐싱 적용
+ * 지원 지역: 관악구, 영등포구, 강남구
  */
 
 const { cacheService } = require('./cacheService');
@@ -21,6 +22,24 @@ const CATEGORY_MAP = {
     '분식': '분식',
     '카페': '카페',
     '술집': '술집',
+};
+
+// 지원 지역 설정
+const SUPPORTED_DISTRICTS = ['관악구', '영등포구', '강남구'];
+
+const DISTRICT_CONFIG = {
+    '관악구': {
+        center: { x: '126.9516', y: '37.4783' },
+        keywords: ['관악', '신림', '봉천', '서울대', '낙성대']
+    },
+    '영등포구': {
+        center: { x: '126.9101', y: '37.5261' },
+        keywords: ['영등포', '여의도', '당산', '문래', '신길']
+    },
+    '강남구': {
+        center: { x: '127.0276', y: '37.4979' },
+        keywords: ['강남', '역삼', '삼성', '논현', '청담', '압구정', '선릉', '코엑스']
+    }
 };
 
 /**
@@ -63,15 +82,6 @@ async function callKakaoApi(endpoint, params = {}) {
 
 /**
  * 장소 검색 (키워드)
- * @param {string} keyword - 검색 키워드
- * @param {object} options - 옵션
- * @param {string} options.category - 카테고리 (한식, 중식 등)
- * @param {number} options.page - 페이지 번호
- * @param {number} options.size - 결과 개수
- * @param {boolean} options.shuffle - 결과 랜덤 셔플
- * @param {string} options.x - 경도 (무시됨, 마포구로 고정)
- * @param {string} options.y - 위도 (무시됨, 마포구로 고정)
- * @param {number} options.radius - 반경 (m)
  */
 async function searchPlaces(keyword, options = {}) {
     const {
@@ -82,83 +92,143 @@ async function searchPlaces(keyword, options = {}) {
         shuffle = false
     } = options;
 
-    // 마포구 중심 좌표 (홍대입구역 기준)
-    const MAPO_CENTER = {
-        x: '126.9246033',
-        y: '37.5571519'
-    };
-
-    // 카테고리 키워드 추가
     const categoryKeyword = CATEGORY_MAP[category] || '';
-    let searchKeyword = keyword;
-
-    // 마포구 키워드가 없으면 추가
-    if (!keyword.includes('마포') && !keyword.includes('홍대') && !keyword.includes('합정') && !keyword.includes('망원') && !keyword.includes('연남')) {
-        searchKeyword = `마포구 ${keyword}`;
-    }
+    let baseKeyword = keyword;
 
     // 맛집/음식점/식당 키워드가 없으면 추가
-    if (!searchKeyword.includes('맛집') && !searchKeyword.includes('음식점') && !searchKeyword.includes('식당')) {
-        searchKeyword = categoryKeyword
-            ? `${searchKeyword} ${categoryKeyword}`
-            : `${searchKeyword} 맛집`;
-    } else if (categoryKeyword && !searchKeyword.includes(categoryKeyword)) {
-        searchKeyword = `${searchKeyword} ${categoryKeyword}`;
+    if (!baseKeyword.includes('맛집') && !baseKeyword.includes('음식점') && !baseKeyword.includes('식당')) {
+        baseKeyword = categoryKeyword
+            ? `${baseKeyword} ${categoryKeyword}`
+            : `${baseKeyword} 맛집`;
+    } else if (categoryKeyword && !baseKeyword.includes(categoryKeyword)) {
+        baseKeyword = `${baseKeyword} ${categoryKeyword}`;
     }
 
-    // 캐시 키 생성 (v2: 주소 필터링 적용)
+    // 지역구 자동 감지
+    let targetDistrict = null;
+    for (const [districtName, config] of Object.entries(DISTRICT_CONFIG)) {
+        if (config.keywords.some(kw => keyword.includes(kw)) || keyword.includes(districtName)) {
+            targetDistrict = districtName;
+            break;
+        }
+    }
+
+    // 지역구가 없으면 3개 지역 모두 검색
+    if (!targetDistrict) {
+        const cacheKey = cacheService.getSearchCacheKey(
+            'districts:v3:multi',
+            `${baseKeyword}:${page}:${size}:${category}`
+        );
+        const cached = cacheService.get(cacheKey);
+        if (cached) {
+            if (shuffle && cached.places) {
+                return { ...cached, places: shuffleArray(cached.places) };
+            }
+            return cached;
+        }
+
+        // 3개 지역 동시 검색
+        const allDocs = [];
+        const searchPromises = SUPPORTED_DISTRICTS.map(async (districtName) => {
+            const config = DISTRICT_CONFIG[districtName];
+            const districtSearchKeyword = `${districtName} ${baseKeyword}`;
+
+            try {
+                const data = await callKakaoApi('/search/keyword.json', {
+                    query: districtSearchKeyword,
+                    page,
+                    size: 15,
+                    x: config.center.x,
+                    y: config.center.y,
+                    radius,
+                    sort: 'distance',
+                });
+                return data.documents;
+            } catch {
+                return [];
+            }
+        });
+
+        const results = await Promise.all(searchPromises);
+        results.forEach(docs => allDocs.push(...docs));
+
+        // 음식점, 카페, 술집만 필터링 + 지원 지역 필터
+        const foodCategories = ['음식점', '카페', '술집'];
+        const filteredDocs = allDocs.filter(doc => {
+            if (!foodCategories.includes(doc.category_group_name)) return false;
+            const address = doc.road_address_name || doc.address_name || '';
+            return SUPPORTED_DISTRICTS.some(d => address.includes(d));
+        });
+
+        // 중복 제거
+        const seen = new Set();
+        const uniqueDocs = filteredDocs.filter(doc => {
+            if (seen.has(doc.id)) return false;
+            seen.add(doc.id);
+            return true;
+        }).slice(0, size);
+
+        let places = uniqueDocs.map(doc => ({
+            placeId: doc.id,
+            name: doc.place_name,
+            address: doc.road_address_name || doc.address_name,
+            category: doc.category_group_name || doc.category_name,
+            categoryDetail: doc.category_name,
+            phone: doc.phone,
+            x: doc.x,
+            y: doc.y,
+        }));
+
+        if (shuffle) places = shuffleArray(places);
+
+        const result = {
+            places,
+            meta: { totalCount: uniqueDocs.length, pageableCount: uniqueDocs.length, isEnd: true, currentPage: page },
+        };
+
+        cacheService.set(cacheKey, result, cacheService.TTL.PLACE_SEARCH);
+        return result;
+    }
+
+    // 특정 지역구 검색
+    const districtConfig = DISTRICT_CONFIG[targetDistrict];
+    const centerCoords = districtConfig.center;
+    let searchKeyword = baseKeyword;
+
+    if (!keyword.includes(targetDistrict)) {
+        searchKeyword = `${targetDistrict} ${baseKeyword}`;
+    }
+
     const cacheKey = cacheService.getSearchCacheKey(
-        'mapo:v2',
-        `${searchKeyword}:${page}:${size}:${category}`
+        'districts:v3',
+        `${searchKeyword}:${page}:${size}:${category}:${targetDistrict}`
     );
 
-    // 캐시 확인
     const cached = cacheService.get(cacheKey);
     if (cached) {
-        console.log(`[캐시 히트] 장소 검색: ${searchKeyword}`);
-        // 셔플 옵션이 있으면 캐시된 결과도 셔플
         if (shuffle && cached.places) {
             return { ...cached, places: shuffleArray(cached.places) };
         }
         return cached;
     }
 
-    console.log(`[API 호출] 장소 검색: ${searchKeyword} (page: ${page})`);
-    const params = {
+    const data = await callKakaoApi('/search/keyword.json', {
         query: searchKeyword,
         page,
         size: 15,
-        x: MAPO_CENTER.x,
-        y: MAPO_CENTER.y,
+        x: centerCoords.x,
+        y: centerCoords.y,
         radius,
         sort: 'distance',
-    };
-
-    const data = await callKakaoApi('/search/keyword.json', params);
-
-    console.log(`[API 결과] 전체: ${data.documents.length}건`);
-
-    // 음식점, 카페, 술집만 필터링
-    const foodCategories = ['음식점', '카페', '술집'];
-    const filteredDocs = data.documents.filter(doc => {
-        // 카테고리 필터
-        if (!foodCategories.includes(doc.category_group_name)) return false;
-
-        // 마포구 지역 필터 (주소에 '마포구'가 포함되어야 함)
-        const address = doc.road_address_name || doc.address_name || '';
-        const isMapo = address.includes('마포구');
-
-        if (!isMapo) {
-            console.log(`[필터링 제외] ${doc.place_name}: ${address} (마포구 아님)`);
-            return false;
-        }
-
-        return true;
     });
 
-    console.log(`[필터 결과] ${filteredDocs.length}건 유효`);
+    const foodCategories = ['음식점', '카페', '술집'];
+    const filteredDocs = data.documents.filter(doc => {
+        if (!foodCategories.includes(doc.category_group_name)) return false;
+        const address = doc.road_address_name || doc.address_name || '';
+        return SUPPORTED_DISTRICTS.some(d => address.includes(d));
+    });
 
-    // 중복 제거 (placeId 기준)
     const seen = new Set();
     const uniqueDocs = filteredDocs.filter(doc => {
         if (seen.has(doc.id)) return false;
@@ -166,7 +236,6 @@ async function searchPlaces(keyword, options = {}) {
         return true;
     }).slice(0, size);
 
-    // 결과 가공
     let places = uniqueDocs.map(doc => ({
         placeId: doc.id,
         name: doc.place_name,
@@ -178,10 +247,7 @@ async function searchPlaces(keyword, options = {}) {
         y: doc.y,
     }));
 
-    // 셔플 옵션
-    if (shuffle) {
-        places = shuffleArray(places);
-    }
+    if (shuffle) places = shuffleArray(places);
 
     const result = {
         places,
@@ -193,26 +259,17 @@ async function searchPlaces(keyword, options = {}) {
         },
     };
 
-    // 캐시 저장
     cacheService.set(cacheKey, result, cacheService.TTL.PLACE_SEARCH);
-
     return result;
 }
 
 /**
  * 장소 상세 정보 조회
- * 캐시 TTL: 7일
  */
 async function getPlaceDetail(placeId) {
     const cacheKey = cacheService.getDetailCacheKey(placeId);
-
     const cached = cacheService.get(cacheKey);
-    if (cached) {
-        console.log(`[캐시 히트] 장소 상세: ${placeId}`);
-        return cached;
-    }
-
-    console.log(`[캐시 미스] 장소 상세: ${placeId}`);
+    if (cached) return cached;
     return null;
 }
 
@@ -228,4 +285,5 @@ module.exports = {
     getPlaceDetail,
     getCategories,
     CATEGORY_MAP,
+    SUPPORTED_DISTRICTS,
 };
