@@ -16,7 +16,10 @@ app.use(cors({
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/babmoa')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/babmoa',  {
+  dbName: 'babmoa', 
+  // dbName: 'test', 
+})
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
