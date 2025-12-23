@@ -16,8 +16,8 @@
   title: String,              // "12월 송년회 장소"
   places: [{
     placeId: String,          // 카카오 장소 ID
-    name: String,             // "마포갈비"
-    address: String,          // "서울 마포구 ..."
+    name: String,             // "맛있는 고기집"
+    address: String,          // "서울 강남구 ..."
     category: String          // "한식"
   }],
   options: {

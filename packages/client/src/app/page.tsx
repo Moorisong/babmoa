@@ -262,7 +262,7 @@ export default function HomePage() {
         {/* 히어로 섹션 */}
         <div className="text-center mb-8 animate-fade-in">
           <h1 className="text-2xl font-bold mb-2">
-            <span className="gradient-text">마포구 전용</span>
+            <span className="gradient-text">서울 3개구</span>
             <span className="text-gray-900"> 오늘의 회식 PICK</span>
           </h1>
           <p className="text-base text-gray-700 font-medium mb-1">
@@ -293,18 +293,23 @@ export default function HomePage() {
             🔎 후보 장소 검색
           </label>
 
-          {/* 마포구 지역 제한 안내 */}
+          {/* 지역 안내 */}
           <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-xl">
             <span className="text-indigo-600">ℹ️</span>
-            <span className="text-xs text-indigo-700">마포구 실제 방문 기록을 기반으로 주차 정보를 제공합니다</span>
+            <span className="text-xs text-indigo-700">실제 방문 기록을 기반으로 주차 정보를 제공합니다</span>
           </div>
 
-          {/* 지역 고정 표시 */}
-          <div className="flex items-center gap-2 mb-3">
+          {/* 지역 표시 */}
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
             <div className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 flex items-center gap-1">
-              📍 마포구
+              📍 관악구
             </div>
-            <span className="text-[10px] text-gray-400">현재 마포구 지역만 지원합니다</span>
+            <div className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 flex items-center gap-1">
+              📍 영등포구
+            </div>
+            <div className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 flex items-center gap-1">
+              📍 강남구
+            </div>
           </div>
 
           {/* 카테고리 필터 (복구) */}
