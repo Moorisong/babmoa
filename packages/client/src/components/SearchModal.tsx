@@ -29,7 +29,7 @@ export default function SearchModal({
     const [searchResults, setSearchResults] = useState<KakaoPlace[]>([]);
     const [searching, setSearching] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('전체');
-    const [selectedDistrict, setSelectedDistrict] = useState<string | null>(initialDistrict);
+    const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
