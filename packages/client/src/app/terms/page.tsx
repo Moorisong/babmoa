@@ -1,4 +1,13 @@
+import { Metadata } from 'next';
 import { Header } from '@/components';
+
+export const metadata: Metadata = {
+    title: "이용약관",
+    description: "밥모아 서비스 이용약관입니다. 서비스 이용 조건, 책임 제한, 데이터 활용 정책을 안내합니다.",
+    alternates: {
+        canonical: "https://babmoa-vote.vercel.app/terms",
+    },
+};
 
 export default function TermsPage() {
     return (
