@@ -5,3 +5,4 @@ export { default as Header } from './Header';
 export { default as Footer } from './Footer';
 export { default as DateTimePicker } from './DateTimePicker';
 export { JsonLd, VoteRoomJsonLd } from './JsonLd';
+export { default as StorageCleaner } from './StorageCleaner';
