@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { KakaoPlace } from '@/lib/api';
 
 interface PlaceBottomSheetProps {
@@ -36,9 +36,85 @@ export default function PlaceBottomSheet({
     isAlreadyAdded
 }: PlaceBottomSheetProps) {
     const [dragY, setDragY] = useState(0);
-    const [isDragging, setIsDragging] = useState(false);
+    const isDraggingRef = useRef(false);
     const startYRef = useRef(0);
+    const dragYRef = useRef(0);
     const sheetRef = useRef<HTMLDivElement>(null);
+
+    const onCloseRef = useRef(onClose);
+    onCloseRef.current = onClose;
+
+    // 터치 핸들러들을 useCallback으로 메모이제이션
+    const handleTouchStart = useCallback((e: TouchEvent) => {
+        startYRef.current = e.touches[0].clientY;
+        isDraggingRef.current = true;
+        dragYRef.current = 0;
+    }, []);
+
+    const handleTouchMove = useCallback((e: TouchEvent) => {
+        if (!isDraggingRef.current) return;
+
+        const currentY = e.touches[0].clientY;
+        const diff = currentY - startYRef.current;
+
+        // 아래로만 드래그 가능
+        if (diff > 0) {
+            dragYRef.current = diff;
+            setDragY(diff);
+            // pull-to-refresh 방지 (passive: false로 등록해야 작동)
+            e.preventDefault();
+        }
+    }, []);
+
+    const handleTouchEnd = useCallback(() => {
+        isDraggingRef.current = false;
+        // 80px 이상 드래그하면 닫기
+        if (dragYRef.current > 80) {
+            onCloseRef.current();
+        }
+        dragYRef.current = 0;
+        setDragY(0);
+    }, []);
+
+    // 전체 시트에 passive: false 터치 이벤트 등록
+    useEffect(() => {
+        const sheet = sheetRef.current;
+        if (!sheet || !isOpen) return;
+
+        // { passive: false }로 등록해야 preventDefault() 작동
+        sheet.addEventListener('touchstart', handleTouchStart, { passive: true });
+        sheet.addEventListener('touchmove', handleTouchMove, { passive: false });
+        sheet.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+        return () => {
+            sheet.removeEventListener('touchstart', handleTouchStart);
+            sheet.removeEventListener('touchmove', handleTouchMove);
+            sheet.removeEventListener('touchend', handleTouchEnd);
+        };
+    }, [isOpen, handleTouchStart, handleTouchMove, handleTouchEnd]);
+
+    // 바텀시트 열릴 때 전체 페이지 스크롤 & pull-to-refresh 방지
+    useEffect(() => {
+        if (isOpen) {
+            // body 스크롤 막기
+            document.body.style.overflow = 'hidden';
+            document.body.style.overscrollBehavior = 'none';
+            // 터치 이벤트가 document로 전파되는 것을 막기
+            const preventPullToRefresh = (e: TouchEvent) => {
+                // 시트가 열려있을 때만
+                if (sheetRef.current?.contains(e.target as Node)) {
+                    return;
+                }
+            };
+            document.addEventListener('touchmove', preventPullToRefresh, { passive: false });
+
+            return () => {
+                document.body.style.overflow = '';
+                document.body.style.overscrollBehavior = '';
+                document.removeEventListener('touchmove', preventPullToRefresh);
+            };
+        }
+    }, [isOpen]);
 
     if (!place) return null;
 
@@ -50,33 +126,6 @@ export default function PlaceBottomSheet({
         yellow: 'bg-yellow-50 border-yellow-200 text-yellow-700',
         red: 'bg-red-50 border-red-200 text-red-700',
         gray: 'bg-gray-50 border-gray-200 text-gray-400',
-    };
-
-    // 터치 시작
-    const handleTouchStart = (e: React.TouchEvent) => {
-        startYRef.current = e.touches[0].clientY;
-        setIsDragging(true);
-    };
-
-    // 터치 이동
-    const handleTouchMove = (e: React.TouchEvent) => {
-        if (!isDragging) return;
-        const currentY = e.touches[0].clientY;
-        const diff = currentY - startYRef.current;
-        // 아래로만 드래그 가능 (양수 값만)
-        if (diff > 0) {
-            setDragY(diff);
-        }
-    };
-
-    // 터치 종료
-    const handleTouchEnd = () => {
-        setIsDragging(false);
-        // 100px 이상 드래그하면 닫기
-        if (dragY > 100) {
-            onClose();
-        }
-        setDragY(0);
     };
 
     return (
@@ -91,27 +140,22 @@ export default function PlaceBottomSheet({
             {/* Bottom Sheet */}
             <div
                 ref={sheetRef}
-                className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl ${isDragging ? '' : 'transition-transform duration-300 ease-out'} ${isOpen ? 'translate-y-0' : 'translate-y-full'
+                className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl ${dragY > 0 ? '' : 'transition-transform duration-300 ease-out'} ${isOpen ? '' : 'translate-y-full'
                     }`}
                 style={{
                     maxHeight: '70vh',
-                    transform: isOpen ? `translateY(${dragY}px)` : 'translateY(100%)'
+                    transform: isOpen ? `translateY(${dragY}px)` : 'translateY(100%)',
+                    touchAction: 'none', // 브라우저 기본 터치 동작 비활성화
                 }}
             >
-                {/* Handle - 스와이프 영역 */}
-                <div
-                    className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing touch-none"
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                >
+                {/* Handle */}
+                <div className="flex justify-center pt-3 pb-2">
                     <div className="w-10 h-1 bg-gray-300 rounded-full" />
                 </div>
 
                 <div
-                    className="px-5 pb-6 overflow-y-auto overscroll-contain touch-pan-y"
+                    className="px-5 pb-6 overflow-y-auto"
                     style={{ maxHeight: 'calc(70vh - 40px)' }}
-                    onTouchMove={(e) => e.stopPropagation()}
                 >
                     {/* 헤더 */}
                     <div className="flex items-start justify-between mb-4">
