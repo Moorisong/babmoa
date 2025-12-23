@@ -35,6 +35,20 @@ export default function ParkingForm({ onSubmit, loading = false }: ParkingFormPr
         onSubmit({ parkingAvailable: true, parkingExperience: experience });
     };
 
+    // 로딩 중일 때 로딩 UI 표시
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
+                <div className="relative mb-6">
+                    <div className="w-16 h-16 border-4 border-indigo-100 rounded-full"></div>
+                    <div className="absolute top-0 left-0 w-16 h-16 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
+                </div>
+                <p className="text-lg font-semibold text-gray-900 mb-2">기록 중...</p>
+                <p className="text-sm text-gray-500">잠시만 기다려주세요</p>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             {step === 'available' && (
