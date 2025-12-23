@@ -128,12 +128,10 @@ export default function HomePage() {
     };
   }, [searchQuery, selectedCategory]);
 
-  // 카테고리 변경 시 재검색
+  // 카테고리 변경 시 재검색 (useEffect가 처리)
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
-    if (searchQuery.trim().length >= 2) {
-      performSearch(searchQuery, category, 1, false);
-    }
+    // useEffect의 selectedCategory 의존성이 자동으로 검색 트리거
   };
 
   // 더보기
