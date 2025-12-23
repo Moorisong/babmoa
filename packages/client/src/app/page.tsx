@@ -70,8 +70,11 @@ export default function HomePage() {
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('전체');
+  const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null); // 지역 필터
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const DISTRICTS = ['관악구', '영등포구', '강남구'];
 
   // 검색 함수
   const performSearch = async (query: string, category: string, page: number = 1, append: boolean = false) => {
@@ -299,17 +302,20 @@ export default function HomePage() {
             <span className="text-xs text-indigo-700">실제 방문 기록을 기반으로 주차 정보를 제공합니다</span>
           </div>
 
-          {/* 지역 표시 */}
+          {/* 지역 필터 */}
           <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <div className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 flex items-center gap-1">
-              📍 관악구
-            </div>
-            <div className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 flex items-center gap-1">
-              📍 영등포구
-            </div>
-            <div className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 flex items-center gap-1">
-              📍 강남구
-            </div>
+            {DISTRICTS.map((district) => (
+              <button
+                key={district}
+                onClick={() => setSelectedDistrict(selectedDistrict === district ? null : district)}
+                className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 transition-all ${selectedDistrict === district
+                  ? 'bg-indigo-500 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+              >
+                📍 {district}
+              </button>
+            ))}
           </div>
 
           {/* 카테고리 필터 (복구) */}
@@ -352,93 +358,111 @@ export default function HomePage() {
             )}
 
             {/* 검색 결과 드롭다운 */}
-            {showResults && searchResults && searchResults.length > 0 && (
-              <div className="absolute z-50 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-200 max-h-96 overflow-y-auto animate-fade-in">
-                {searchResults.map((place) => (
-                  <button
-                    key={place.placeId}
-                    onClick={() => handleSelectPlace(place)}
-                    className="w-full p-4 text-left hover:bg-indigo-50 border-b border-gray-100 last:border-b-0 transition-colors"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="text-xl">
-                        {place.category === '음식점' ? '🍽️' :
-                          place.category === '카페' ? '☕' :
-                            place.category === '술집' ? '🍺' : '📍'}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{place.name}</p>
-                        <p className="text-sm text-gray-500 truncate">{place.address}</p>
-                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <span className="text-xs text-indigo-500">{place.category}</span>
-                          {place.parkingInfo && (
-                            <>
-                              <span
-                                className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 cursor-help ${!place.parkingInfo.hasEnoughData
-                                  ? 'bg-gray-50 border-gray-200 text-gray-400'
-                                  : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.7
-                                    ? 'bg-green-50 border-green-200 text-green-700'
-                                    : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.4
-                                      ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
-                                      : 'bg-red-50 border-red-200 text-red-700'
-                                  }`}
-                                onMouseEnter={(e) => {
-                                  e.stopPropagation();
-                                  const message = place.parkingInfo?.hasEnoughData
-                                    ? "주차 성공률은 실제 방문자들이 남긴 기록을 바탕으로 계산된 참고용 수치입니다."
-                                    : "아직 주차기록이 충분하지 않아요 ☁️";
-                                  handleTooltipEnter(e, message);
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.stopPropagation();
-                                  handleTooltipLeave();
-                                }}
-                              >
-                                {place.parkingInfo.hasEnoughData ? (
-                                  <>
-                                    <span className="font-semibold">🅿️ {Math.round((place.parkingInfo.successRate || 0) * 100)}%</span>
-                                    <span className="mx-1 opacity-40">|</span>
-                                    <span>{place.parkingInfo.recordCount}건</span>
-                                  </>
-                                ) : (
-                                  <span>🅿️ 데이터 부족</span>
-                                )}
-                              </span>
-                              {place.parkingInfo.hasEnoughData && (
-                                <span className="text-[10px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded bg-gray-50">
-                                  참고용
-                                </span>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
+            {showResults && searchResults && searchResults.length > 0 && (() => {
+              const filteredResults = selectedDistrict
+                ? searchResults.filter(place => place.address.includes(selectedDistrict))
+                : searchResults;
 
-                {/* 더보기 버튼 */}
-                {hasMore && (
-                  <button
-                    onClick={loadMore}
-                    disabled={loadingMore}
-                    className="w-full py-3 text-center text-indigo-600 font-medium hover:bg-indigo-50 transition-colors border-t border-gray-100"
-                  >
-                    {loadingMore ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        로딩 중...
-                      </span>
-                    ) : (
-                      '더보기 ↓'
-                    )}
-                  </button>
-                )}
-              </div>
-            )}
+              return (
+                <div className="absolute z-50 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-200 max-h-96 overflow-y-auto animate-fade-in">
+                  {filteredResults.length === 0 ? (
+                    <div className="p-6 text-center">
+                      <p className="text-gray-500">'{selectedDistrict}'에 해당하는 결과가 없습니다</p>
+                      <button
+                        onClick={() => setSelectedDistrict(null)}
+                        className="mt-2 text-sm text-indigo-600 hover:underline"
+                      >
+                        전체 보기
+                      </button>
+                    </div>
+                  ) : (
+                    filteredResults.map((place) => (
+                      <button
+                        key={place.placeId}
+                        onClick={() => handleSelectPlace(place)}
+                        className="w-full p-4 text-left hover:bg-indigo-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="text-xl">
+                            {place.category === '음식점' ? '🍽️' :
+                              place.category === '카페' ? '☕' :
+                                place.category === '술집' ? '🍺' : '📍'}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{place.name}</p>
+                            <p className="text-sm text-gray-500 truncate">{place.address}</p>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              <span className="text-xs text-indigo-500">{place.category}</span>
+                              {place.parkingInfo && (
+                                <>
+                                  <span
+                                    className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 cursor-help ${!place.parkingInfo.hasEnoughData
+                                      ? 'bg-gray-50 border-gray-200 text-gray-400'
+                                      : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.7
+                                        ? 'bg-green-50 border-green-200 text-green-700'
+                                        : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.4
+                                          ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
+                                          : 'bg-red-50 border-red-200 text-red-700'
+                                      }`}
+                                    onMouseEnter={(e) => {
+                                      e.stopPropagation();
+                                      const message = place.parkingInfo?.hasEnoughData
+                                        ? "주차 성공률은 실제 방문자들이 남긴 기록을 바탕으로 계산된 참고용 수치입니다."
+                                        : "아직 주차기록이 충분하지 않아요 ☁️";
+                                      handleTooltipEnter(e, message);
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.stopPropagation();
+                                      handleTooltipLeave();
+                                    }}
+                                  >
+                                    {place.parkingInfo.hasEnoughData ? (
+                                      <>
+                                        <span className="font-semibold">🅿️ {Math.round((place.parkingInfo.successRate || 0) * 100)}%</span>
+                                        <span className="mx-1 opacity-40">|</span>
+                                        <span>{place.parkingInfo.recordCount}건</span>
+                                      </>
+                                    ) : (
+                                      <span>🅿️ 데이터 부족</span>
+                                    )}
+                                  </span>
+                                  {place.parkingInfo.hasEnoughData && (
+                                    <span className="text-[10px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded bg-gray-50">
+                                      참고용
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+
+                  {/* 더보기 버튼 */}
+                  {hasMore && (
+                    <button
+                      onClick={loadMore}
+                      disabled={loadingMore}
+                      className="w-full py-3 text-center text-indigo-600 font-medium hover:bg-indigo-50 transition-colors border-t border-gray-100"
+                    >
+                      {loadingMore ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                          로딩 중...
+                        </span>
+                      ) : (
+                        '더보기 ↓'
+                      )}
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* 검색 결과 없음 */}
             {showResults && searchQuery.length >= 2 && (!searchResults || searchResults.length === 0) && !searching && (
