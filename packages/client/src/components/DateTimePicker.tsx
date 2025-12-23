@@ -27,17 +27,30 @@ export default function DateTimePicker({
 
     // 현재 선택된 날짜 파싱
     const selectedDate = value ? new Date(value) : null;
+    const now = new Date();
     const [viewMonth, setViewMonth] = useState(() => {
-        const d = selectedDate || new Date();
+        const d = selectedDate || now;
         return new Date(d.getFullYear(), d.getMonth(), 1);
     });
-    const [selectedHour, setSelectedHour] = useState(selectedDate?.getHours() ?? 18);
-    const [selectedMinute, setSelectedMinute] = useState(selectedDate?.getMinutes() ?? 0);
+    const [selectedHour, setSelectedHour] = useState(selectedDate?.getHours() ?? now.getHours());
+    const [selectedMinute, setSelectedMinute] = useState(() => {
+        if (selectedDate) return selectedDate.getMinutes();
+        // 현재 분을 10분 단위로 올림
+        const currentMinute = now.getMinutes();
+        return Math.ceil(currentMinute / 10) * 10 % 60;
+    });
     const [tempSelectedDate, setTempSelectedDate] = useState<Date | null>(selectedDate);
 
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    // 피커 열릴 때 오늘 자동 선택
+    useEffect(() => {
+        if (isOpen && !tempSelectedDate) {
+            setTempSelectedDate(new Date());
+        }
+    }, [isOpen]);
 
     // 외부 클릭 감지
     useEffect(() => {
@@ -110,6 +123,12 @@ export default function DateTimePicker({
         if (tempSelectedDate) {
             const newDate = new Date(tempSelectedDate);
             newDate.setHours(selectedHour, selectedMinute, 0, 0);
+
+            // 과거 시간 체크
+            if (newDate <= new Date()) {
+                alert('현재 시간 이후로 설정해주세요');
+                return;
+            }
 
             // datetime-local 형식: "YYYY-MM-DDTHH:mm"
             const year = newDate.getFullYear();
