@@ -3,9 +3,14 @@ const Vote = require('./Vote');
 const ParkingData = require('./ParkingData');
 const ParkingStats = require('./ParkingStats');
 
+const ArchiveVoteRoom = require('./ArchiveVoteRoom');
+const ArchiveVote = require('./ArchiveVote');
+
 module.exports = {
     VoteRoom,
     Vote,
     ParkingData,
-    ParkingStats
+    ParkingStats,
+    ArchiveVoteRoom,
+    ArchiveVote
 };
