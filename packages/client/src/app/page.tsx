@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { Header, LinkShare } from '@/components';
+import { Header, LinkShare, DateTimePicker } from '@/components';
 import { roomsApi, placesApi, KakaoPlace } from '@/lib/api';
 
 interface Place {
@@ -485,25 +485,11 @@ export default function HomePage() {
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             ⏰ 투표 마감 시간
           </label>
-          <div className="relative">
-            <input
-              type="datetime-local"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}
-              className="input-field py-3 text-sm w-full cursor-pointer"
-              style={{
-                color: deadline ? '#1e293b' : 'transparent',
-              }}
-            />
-            {!deadline && (
-              <div
-                className="absolute inset-0 flex items-center px-4 pointer-events-none text-gray-400 text-sm"
-              >
-                마감 시간을 선택하세요
-              </div>
-            )}
-          </div>
+          <DateTimePicker
+            value={deadline}
+            onChange={setDeadline}
+            placeholder="마감 시간을 선택하세요"
+          />
         </div>
 
         {/* 옵션 */}
