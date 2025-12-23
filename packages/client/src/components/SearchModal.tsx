@@ -37,12 +37,12 @@ export default function SearchModal({
         setMounted(true);
     }, []);
 
-    // 포커스
+    // 포커스 (모달 모드에서만)
     useEffect(() => {
-        if (isOpen && inputRef.current) {
+        if (isOpen && inputRef.current && !isInline) {
             setTimeout(() => inputRef.current?.focus(), 100);
         }
-    }, [isOpen]);
+    }, [isOpen, isInline]);
 
     // 검색 함수
     const performSearch = async (query: string) => {
