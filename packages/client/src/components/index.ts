@@ -6,3 +6,6 @@ export { default as Footer } from './Footer';
 export { default as DateTimePicker } from './DateTimePicker';
 export { JsonLd, VoteRoomJsonLd } from './JsonLd';
 export { default as StorageCleaner } from './StorageCleaner';
+export { default as KakaoMap } from './KakaoMap';
+export { default as PlaceBottomSheet } from './PlaceBottomSheet';
+export { default as SearchModal } from './SearchModal';
