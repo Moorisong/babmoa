@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "밥모아 - 회식 투표",
+    default: "밥모아 - 회식 결정 투표",
     template: "%s | 밥모아",
   },
   description: "팀 회식 장소를 빠르게 정해보세요. 실제 방문 기록 기반 주차 정보까지!",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   authors: [{ name: "밥모아" }],
   creator: "밥모아",
   openGraph: {
-    title: "밥모아 - 회식 투표",
+    title: "밥모아 - 회식 결정 투표",
     description: "어디서 먹을지 같이 정해요! 투표 마감 전에 참여해주세요 ⏰",
     url: "https://babmoa-vote.vercel.app",
     siteName: "밥모아",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
         url: "https://babmoa-vote.vercel.app/og-image.png",
         width: 1200,
         height: 630,
-        alt: "밥모아 - 회식 투표",
+        alt: "밥모아 - 회식 결정 투표",
       },
     ],
     locale: "ko_KR",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "밥모아 - 회식 투표",
+    title: "밥모아 - 회식 결정 투표",
     description: "어디서 먹을지 같이 정해요! 투표 마감 전에 참여해주세요 ⏰",
     images: ["https://babmoa-vote.vercel.app/og-image.png"],
   },
