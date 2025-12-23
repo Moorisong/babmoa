@@ -134,4 +134,9 @@ export const placesApi = {
     },
 
     getCategories: () => fetchApi<{ categories: string[] }>('/places/categories'),
+
+    getByDistrict: (district: string) => fetchApi<{
+        places: KakaoPlace[];
+        meta: { totalCount: number; district: string; currentTimeSlot?: string };
+    }>(`/places/district/${encodeURIComponent(district)}`),
 };

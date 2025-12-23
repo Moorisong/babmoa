@@ -156,3 +156,77 @@ exports.getCategories = (req, res) => {
         }
     });
 };
+
+// GET /api/places/district/:district - 지역별 장소 목록 (지도 마커용)
+exports.getPlacesByDistrict = async (req, res) => {
+    try {
+        const { district } = req.params;
+        const SUPPORTED_DISTRICTS = ['관악구', '영등포구', '강남구'];
+
+        if (!SUPPORTED_DISTRICTS.includes(district)) {
+            return res.status(400).json({
+                success: false,
+                error: { code: 'INVALID_DISTRICT', message: '지원하지 않는 지역입니다' }
+            });
+        }
+
+        // 해당 지역의 맛집 검색
+        const result = await kakaoMapService.searchPlaces(`${district} 맛집`, {
+            page: 1,
+            size: 15,
+            category: '전체'
+        });
+
+        if (!result.places || result.places.length === 0) {
+            return res.json({
+                success: true,
+                data: { places: [], meta: { totalCount: 0 } }
+            });
+        }
+
+        // 주차 정보 병합
+        const placeIds = result.places.map(p => p.placeId);
+        const currentTimeSlot = getCurrentTimeSlot();
+
+        const parkingStats = await ParkingStats.find({
+            placeId: { $in: placeIds },
+            timeSlot: currentTimeSlot
+        });
+
+        const statsMap = new Map();
+        parkingStats.forEach(stat => {
+            const hasEnoughData = stat.totalAttempts >= MIN_RECORD_COUNT;
+            statsMap.set(stat.placeId, {
+                parkingAvailable: stat.successCount > 0 ? true : (stat.failCount > 0 ? false : null),
+                successRate: hasEnoughData ? stat.successRate : null,
+                recordCount: stat.totalAttempts,
+                timeSlot: currentTimeSlot,
+                hasEnoughData
+            });
+        });
+
+        const placesWithParking = result.places.map(place => ({
+            ...place,
+            parkingInfo: statsMap.get(place.placeId) || null
+        }));
+
+        res.json({
+            success: true,
+            data: {
+                places: placesWithParking,
+                meta: {
+                    totalCount: placesWithParking.length,
+                    district,
+                    currentTimeSlot
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('getPlacesByDistrict error:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: 'SERVER_ERROR', message: error.message || '서버 오류가 발생했습니다' }
+        });
+    }
+};
