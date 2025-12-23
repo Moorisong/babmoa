@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function Footer() {
     return (
-        <footer className="py-8 text-center text-xs text-gray-400">
+        <footer className="pt-4 pb-8 text-center text-xs text-gray-400">
             <div className="flex justify-center gap-4 mb-2">
                 <Link href="/terms" className="hover:text-gray-600 transition-colors">
                     이용약관
