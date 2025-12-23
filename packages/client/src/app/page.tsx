@@ -76,8 +76,8 @@ export default function HomePage() {
 
   const DISTRICTS = ['관악구', '영등포구', '강남구'];
 
-  // 검색 함수
-  const performSearch = async (query: string, category: string, page: number = 1, append: boolean = false) => {
+  // 검색 함수 (카테고리 없이 전체 검색)
+  const performSearch = async (query: string, page: number = 1, append: boolean = false) => {
     if (query.trim().length < 2) {
       setSearchResults([]);
       setShowResults(false);
@@ -88,7 +88,7 @@ export default function HomePage() {
     else setLoadingMore(true);
 
     try {
-      const result = await placesApi.search(query, { category, page });
+      const result = await placesApi.search(query, { page });
       if (result.success && result.data) {
         const newPlaces = result.data.places;
         if (append) {
@@ -123,13 +123,13 @@ export default function HomePage() {
     }
 
     debounceRef.current = setTimeout(() => {
-      performSearch(searchQuery, selectedCategory, 1, false);
+      performSearch(searchQuery, 1, false);
     }, 300);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery]); // 카테고리 변경 시 재검색 안함 (클라이언트 필터링)
 
   // 카테고리 변경 시 재검색 (useEffect가 처리)
   const handleCategoryChange = (category: string) => {
@@ -140,7 +140,7 @@ export default function HomePage() {
   // 더보기
   const loadMore = () => {
     if (!hasMore || loadingMore) return;
-    performSearch(searchQuery, selectedCategory, searchPage + 1, true);
+    performSearch(searchQuery, searchPage + 1, true);
   };
 
   // 외부 클릭 시 검색 결과 닫기
@@ -359,20 +359,38 @@ export default function HomePage() {
 
             {/* 검색 결과 드롭다운 */}
             {showResults && searchResults && searchResults.length > 0 && (() => {
-              const filteredResults = selectedDistrict
-                ? searchResults.filter(place => place.address.includes(selectedDistrict))
-                : searchResults;
+              // 클라이언트 필터링: 지역 + 카테고리
+              let filteredResults = searchResults;
+
+              if (selectedDistrict) {
+                filteredResults = filteredResults.filter(place => place.address.includes(selectedDistrict));
+              }
+
+              if (selectedCategory !== '전체') {
+                filteredResults = filteredResults.filter(place =>
+                  place.category?.includes(selectedCategory) ||
+                  place.categoryDetail?.includes(selectedCategory)
+                );
+              }
+
+              const activeFilters = [
+                selectedDistrict,
+                selectedCategory !== '전체' ? selectedCategory : null
+              ].filter(Boolean);
 
               return (
                 <div className="absolute z-50 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-200 max-h-96 overflow-y-auto animate-fade-in">
                   {filteredResults.length === 0 ? (
                     <div className="p-6 text-center">
-                      <p className="text-gray-500">'{selectedDistrict}'에 해당하는 결과가 없습니다</p>
+                      <p className="text-gray-500">'{activeFilters.join(' + ')}'에 해당하는 결과가 없습니다</p>
                       <button
-                        onClick={() => setSelectedDistrict(null)}
+                        onClick={() => {
+                          setSelectedDistrict(null);
+                          setSelectedCategory('전체');
+                        }}
                         className="mt-2 text-sm text-indigo-600 hover:underline"
                       >
-                        전체 보기
+                        필터 초기화
                       </button>
                     </div>
                   ) : (
