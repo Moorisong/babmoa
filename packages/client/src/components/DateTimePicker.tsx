@@ -12,7 +12,7 @@ interface DateTimePickerProps {
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const MINUTES = [0, 10, 20, 30, 40, 50];
+const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 
 export default function DateTimePicker({
     value,
@@ -35,9 +35,7 @@ export default function DateTimePicker({
     const [selectedHour, setSelectedHour] = useState(selectedDate?.getHours() ?? now.getHours());
     const [selectedMinute, setSelectedMinute] = useState(() => {
         if (selectedDate) return selectedDate.getMinutes();
-        // 현재 분을 10분 단위로 올림
-        const currentMinute = now.getMinutes();
-        return Math.ceil(currentMinute / 10) * 10 % 60;
+        return now.getMinutes();
     });
     const [tempSelectedDate, setTempSelectedDate] = useState<Date | null>(selectedDate);
 
