@@ -6,36 +6,99 @@ export function getParticipantId(): string {
         return '';
     }
 
-    let participantId = localStorage.getItem(PARTICIPANT_ID_KEY);
+    let participantId = getItemWithExpiry(PARTICIPANT_ID_KEY);
 
     if (!participantId) {
         participantId = crypto.randomUUID();
-        localStorage.setItem(PARTICIPANT_ID_KEY, participantId);
+        setItemWithExpiry(PARTICIPANT_ID_KEY, participantId);
     }
 
     return participantId;
 }
 
+const STORAGE_EXPIRY_DAYS = 14;
+
+interface StoredData {
+    value: string;
+    timestamp: number;
+}
+
+function setItemWithExpiry(key: string, value: string) {
+    if (typeof window === 'undefined') return;
+    const data: StoredData = {
+        value,
+        timestamp: new Date().getTime(),
+    };
+    localStorage.setItem(key, JSON.stringify(data));
+}
+
+function getItemWithExpiry(key: string): string | null {
+    if (typeof window === 'undefined') return null;
+    const itemStr = localStorage.getItem(key);
+    if (!itemStr) return null;
+
+    try {
+        const item: StoredData = JSON.parse(itemStr);
+        // 하위 호환성: 예전 데이터가 단순 문자열('true')인 경우
+        if (typeof item === 'string') return item;
+
+        // 만료 체크
+        const now = new Date().getTime();
+        const expiryTime = STORAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+
+        if (now - item.timestamp > expiryTime) {
+            localStorage.removeItem(key);
+            return null;
+        }
+        return item.value;
+    } catch {
+        // 파싱 에러나면 그냥 문자열로 취급 (하위 호환)
+        return itemStr;
+    }
+}
+
+// 오래된 데이터 정리 (앱 진입 시 실행 권장)
+export function cleanOldStorage() {
+    if (typeof window === 'undefined') return;
+
+    const now = new Date().getTime();
+    const expiryTime = STORAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+
+    Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('voted_') || key.startsWith('parking_') || key === PARTICIPANT_ID_KEY) {
+            const itemStr = localStorage.getItem(key);
+            if (!itemStr) return;
+
+            try {
+                const item = JSON.parse(itemStr);
+                if (item && item.timestamp && (now - item.timestamp > expiryTime)) {
+                    localStorage.removeItem(key);
+                    console.log(`Cleaned up expired storage: ${key}`);
+                }
+            } catch {
+                // 예전 데이터 형식이면 무시하거나 삭제 정책 결정 가능
+                // 현재는 유지
+            }
+        }
+    });
+}
+
 // 투표 여부 확인
 export function hasVoted(roomId: string): boolean {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem(`voted_${roomId}`) === 'true';
+    return getItemWithExpiry(`voted_${roomId}`) === 'true';
 }
 
 export function setVoted(roomId: string): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(`voted_${roomId}`, 'true');
+    setItemWithExpiry(`voted_${roomId}`, 'true');
 }
 
 // 주차 기록 여부 확인
 export function hasRecordedParking(roomId: string): boolean {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem(`parking_${roomId}`) === 'true';
+    return getItemWithExpiry(`parking_${roomId}`) === 'true';
 }
 
 export function setRecordedParking(roomId: string): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(`parking_${roomId}`, 'true');
+    setItemWithExpiry(`parking_${roomId}`, 'true');
 }
 
 // 시간대 계산 (현재 시간 기준)

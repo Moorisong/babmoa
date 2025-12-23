@@ -15,6 +15,21 @@
 | Vote | 영구 | ❌ | 3년 단위 |
 | ParkingData | 1년 | ✅ 31536000초 | 자동 삭제 |
 | ParkingStats | 영구 | ❌ | ❌ |
+| Client Storage | 14일 | ✅ (앱 진입 시) | 자동 삭제 |
+
+---
+
+## 클라이언트 데이터 (LocalStorage)
+
+### 저장 항목
+- `babmoa_participant_id`: 브라우저 식별용 UUID (영구)
+- `voted_{roomId}`: 투표 참여 여부 (14일 후 만료)
+- `parking_{roomId}`: 주차 정보 기록 여부 (14일 후 만료)
+
+### 만료 정책
+- **기간:** 14일 (2주)
+- **방식:** 앱 진입 시(`StorageCleaner`) 만료된 항목 자동 삭제
+- **목적:** 브라우저 저장소 용량 관리 및 개인정보 보호
 
 ---
 
