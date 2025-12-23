@@ -393,3 +393,108 @@ input[type="datetime-local"]::-webkit-datetime-edit-ampm-field {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* ========================================
+   지도 관련 스타일
+======================================== */
+
+/* 지도 컨테이너 */
+.map-container {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* 지도 오버레이 버튼들 */
+.map-overlay {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.map-overlay>* {
+  pointer-events: auto;
+}
+
+/* 마커 라벨 스타일 */
+.map-marker-label {
+  transition: all 0.2s ease;
+}
+
+.map-marker-label:hover {
+  transform: translateY(-42px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.map-marker-label.selected {
+  transform: translateY(-42px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+/* 플로팅 액션 버튼 */
+.fab {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  z-index: 30;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  padding: 14px 20px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+}
+
+.fab:active {
+  transform: translateY(0);
+}
+
+/* 지역 필터 칩 */
+.district-chip {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.district-chip.active {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.district-chip:not(.active) {
+  background: white;
+  color: #64748b;
+  border-color: #e2e8f0;
+}
+
+.district-chip:not(.active):hover {
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+/* 스크롤바 숨기기 */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
