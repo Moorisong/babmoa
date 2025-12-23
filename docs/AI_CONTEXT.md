@@ -107,6 +107,7 @@ npm run dev:server       # 백엔드 (localhost:5000)
 | [UX_FLOW.md](./UX_FLOW.md) | 사용자 흐름, 페이지 구성 |
 | [DATABASE.md](./DATABASE.md) | 스키마 설계, 데이터 전략 |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | 기술 스택, API 명세 |
+| [MAP_INTEGRATION.md](./MAP_INTEGRATION.md) | 지도 통합, 주차 뱃지 UI |
 
 ---
 

@@ -1,10 +1,27 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { Header, LinkShare, DateTimePicker } from '@/components';
-import { roomsApi, placesApi, KakaoPlace } from '@/lib/api';
+import { Header, LinkShare, DateTimePicker, PlaceBottomSheet, SearchModal } from '@/components';
+import { roomsApi, KakaoPlace } from '@/lib/api';
+
+// KakaoMap은 SSR 비활성화 (window.kakao 필요)
+const KakaoMap = dynamic(() => import('@/components/KakaoMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[400px] bg-gray-100 rounded-2xl flex items-center justify-center">
+      <div className="flex flex-col items-center gap-2">
+        <svg className="animate-spin w-8 h-8 text-indigo-500" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+        <span className="text-sm text-gray-500">지도 로딩 중...</span>
+      </div>
+    </div>
+  )
+});
 
 interface Place {
   placeId: string;
@@ -12,9 +29,13 @@ interface Place {
   address: string;
   category: string;
   categoryDetail?: string;
+  x?: string;
+  y?: string;
 }
 
-const CATEGORIES = ['전체', '한식', '중식', '일식', '양식', '고기', '해산물', '분식', '카페', '술집'];
+type District = '강남구' | '관악구' | '영등포구';
+
+const DISTRICTS: District[] = ['강남구', '관악구', '영등포구'];
 
 export default function HomePage() {
   const router = useRouter();
@@ -25,7 +46,14 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
 
-  /* Portal Mounting Logic */
+  // 지도 관련 상태
+  const [selectedDistrict, setSelectedDistrict] = useState<District>('강남구');
+  const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [focusCoords, setFocusCoords] = useState<{ x: string; y: string } | null>(null);
+
+  // Portal Mounting
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -45,108 +73,27 @@ export default function HomePage() {
     }, 3000);
   };
 
-  const [tooltip, setTooltip] = useState<{ show: boolean; x: number; y: number; text: string } | null>(null);
-
-  const handleTooltipEnter = (e: React.MouseEvent, text: string) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTooltip({
-      show: true,
-      x: rect.left + rect.width / 2, // Center horizontally
-      y: rect.top - 10, // Above the element
-      text
-    });
-  };
-
-  const handleTooltipLeave = () => {
-    setTooltip(null);
-  };
-
-  // 장소 검색
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<KakaoPlace[]>([]); // 전체 결과 (최대 45개)
-  const [searching, setSearching] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-  const [displayCount, setDisplayCount] = useState(15); // 화면에 표시할 개수
-  const [selectedCategory, setSelectedCategory] = useState('전체');
-  const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null); // 지역 필터
-  const searchRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-
-  const DISTRICTS = ['관악구', '영등포구', '강남구'];
-  const PAGE_SIZE = 15;
-
-  // 검색 함수 (서버에서 전체 결과 받기)
-  const performSearch = async (query: string) => {
-    if (query.trim().length < 2) {
-      setSearchResults([]);
-      setShowResults(false);
-      return;
-    }
-
-    setSearching(true);
-    setDisplayCount(PAGE_SIZE); // 새 검색 시 표시 개수 초기화
-
-    try {
-      const result = await placesApi.search(query, {});
-      if (result.success && result.data) {
-        setSearchResults(result.data.places); // 전체 저장 (최대 45개)
-        setShowResults(true);
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  // 검색 디바운스
-  useEffect(() => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-
-    if (searchQuery.trim().length < 2) {
-      setSearchResults([]);
-      setShowResults(false);
-      setDisplayCount(PAGE_SIZE);
-      return;
-    }
-
-    debounceRef.current = setTimeout(() => {
-      performSearch(searchQuery);
-    }, 300);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [searchQuery]);
-
-  // 카테고리 변경 시
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    setDisplayCount(PAGE_SIZE); // 필터 변경 시 표시 개수 초기화
-  };
-
-  // 더보기 (클라이언트 페이지네이션)
-  const loadMore = () => {
-    setDisplayCount(prev => prev + PAGE_SIZE);
-  };
-
-  // 외부 클릭 시 검색 결과 닫기
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setShowResults(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+  // 마커 클릭 핸들러
+  const handleMarkerClick = useCallback((place: KakaoPlace) => {
+    setSelectedPlace(place);
+    setIsBottomSheetOpen(true);
   }, []);
 
-  const handleSelectPlace = (kakaoPlace: KakaoPlace) => {
+  // 장소 추가 핸들러
+  const handleAddPlace = (kakaoPlace: KakaoPlace) => {
     if (places.some(p => p.placeId === kakaoPlace.placeId)) {
       showToast('이미 추가된 장소입니다');
+      return;
+    }
+
+    // 지원 지역 확인 (주소에 3개구 포함 여부)
+    const supportedDistricts = ['관악구', '영등포구', '강남구'];
+    const isSupported = supportedDistricts.some(district =>
+      kakaoPlace.address.includes(district)
+    );
+
+    if (!isSupported) {
+      showToast('현재 관악구, 영등포구, 강남구만 지원합니다');
       return;
     }
 
@@ -156,17 +103,27 @@ export default function HomePage() {
       address: kakaoPlace.address,
       category: kakaoPlace.category || '음식점',
       categoryDetail: kakaoPlace.categoryDetail,
+      x: kakaoPlace.x,
+      y: kakaoPlace.y,
     };
 
     setPlaces([...places, newPlace]);
-    // 검색어는 유지, 드롭다운만 닫기
-    setShowResults(false);
+    setIsBottomSheetOpen(false);
+    showToast(`'${kakaoPlace.name}' 추가됨!`, 'success');
   };
 
+  // 장소 삭제 핸들러
   const handleRemovePlace = (placeId: string) => {
     setPlaces(places.filter(p => p.placeId !== placeId));
   };
 
+  // 검색에서 장소 선택
+  const handleSearchSelect = (kakaoPlace: KakaoPlace) => {
+    handleAddPlace(kakaoPlace);
+    setIsSearchExpanded(false);
+  };
+
+  // 투표방 생성
   const handleSubmit = async () => {
     if (!title) {
       showToast('투표 제목을 입력해주세요');
@@ -180,6 +137,11 @@ export default function HomePage() {
 
     if (!deadline) {
       showToast('투표 마감 시간을 설정해주세요');
+      return;
+    }
+
+    if (new Date(deadline) <= new Date()) {
+      showToast('마감 시간은 현재 시간 이후로 설정해주세요');
       return;
     }
 
@@ -250,23 +212,20 @@ export default function HomePage() {
   return (
     <>
       <Header />
-      <main className="max-w-lg mx-auto px-5 py-8">
+      <main className="max-w-lg mx-auto px-5 py-6">
         {/* 히어로 섹션 */}
-        <div className="text-center mb-8 animate-fade-in">
+        <div className="text-center mb-6 animate-fade-in">
           <h1 className="text-2xl font-bold mb-2">
             <span className="gradient-text">서울 3개구</span>
             <span className="text-gray-900"> 오늘의 회식 PICK</span>
           </h1>
-          <p className="text-base text-gray-700 font-medium mb-1">
-            실제 방문 기록 기반으로 <span className="text-indigo-600 font-bold">'주차장 정보'</span>까지 확인할 수 있어요.
-          </p>
-          <p className="text-xs text-gray-500">
-            데이터가 쌓인 장소에 한해 제공 (참고용)
+          <p className="text-sm text-gray-600">
+            지도에서 식당을 찾고, <span className="text-indigo-600 font-semibold">주차 정보</span>까지 확인하세요
           </p>
         </div>
 
         {/* 제목 입력 */}
-        <div className="mb-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        <div className="mb-5 animate-slide-up" style={{ animationDelay: '0.1s' }}>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             📝 투표 제목
           </label>
@@ -279,238 +238,134 @@ export default function HomePage() {
           />
         </div>
 
-        {/* 장소 검색 (Border Added) */}
-        <div className="mb-6 animate-slide-up relative z-50 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm" style={{ animationDelay: '0.15s' }} ref={searchRef}>
+        {/* 지역 필터 + 지도 */}
+        <div className="mb-5 animate-slide-up" style={{ animationDelay: '0.15s' }}>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            🔎 후보 장소 검색
+            🗺️ 지도에서 후보 선택
           </label>
 
-          {/* 지역 안내 */}
-          <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-xl">
-            <span className="text-indigo-600">ℹ️</span>
-            <span className="text-xs text-indigo-700">실제 방문 기록을 기반으로 주차 정보를 제공합니다</span>
-          </div>
-
           {/* 지역 필터 */}
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
+          <div className="flex gap-2 mb-3">
             {DISTRICTS.map((district) => (
               <button
                 key={district}
-                onClick={() => setSelectedDistrict(selectedDistrict === district ? null : district)}
-                className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 transition-all ${selectedDistrict === district
-                  ? 'bg-indigo-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                onClick={() => setSelectedDistrict(district)}
+                className={`district-chip ${selectedDistrict === district ? 'active' : ''}`}
               >
                 📍 {district}
               </button>
             ))}
           </div>
 
-          {/* 카테고리 필터 (복구) */}
-          <div className="flex gap-2 mb-3 overflow-x-auto pb-2 scrollbar-hide">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => handleCategoryChange(cat)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${selectedCategory === cat
-                  ? 'bg-indigo-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* 정렬 안내 (고정) */}
-          <div className="flex items-center gap-1 mb-4 text-[10px] text-indigo-600 font-medium bg-indigo-50 px-2 py-1 rounded-lg inline-block">
-            <span>✨ 주차 데이터 있는 식당 우선 · 가까운 순</span>
-          </div>
-
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => searchResults && searchResults.length > 0 && setShowResults(true)}
-              placeholder="가게 이름, 지역 이름, 메뉴 등"
-              className="input-field py-3 pr-10 text-base"
+          {/* 지도 */}
+          <div className="map-container relative">
+            <KakaoMap
+              district={selectedDistrict}
+              onMarkerClick={handleMarkerClick}
+              focusCoords={focusCoords}
             />
-            {searching && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <svg className="animate-spin w-5 h-5 text-indigo-500" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              </div>
-            )}
 
-            {/* 검색 결과 드롭다운 */}
-            {showResults && searchResults && searchResults.length > 0 && (() => {
-              // 클라이언트 필터링: 지역 + 카테고리
-              let filteredResults = searchResults;
-
-              if (selectedDistrict) {
-                filteredResults = filteredResults.filter(place => place.address.includes(selectedDistrict));
-              }
-
-              if (selectedCategory !== '전체') {
-                filteredResults = filteredResults.filter(place =>
-                  place.category?.includes(selectedCategory) ||
-                  place.categoryDetail?.includes(selectedCategory)
-                );
-              }
-
-              const activeFilters = [
-                selectedDistrict,
-                selectedCategory !== '전체' ? selectedCategory : null
-              ].filter(Boolean);
-
-              // 클라이언트 페이지네이션: displayCount만큼만 표시
-              const displayedResults = filteredResults.slice(0, displayCount);
-              const hasMore = displayCount < filteredResults.length;
-
-              return (
-                <div className="absolute z-50 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-200 max-h-96 overflow-y-auto animate-fade-in">
-                  {filteredResults.length === 0 ? (
-                    <div className="p-6 text-center">
-                      <p className="text-gray-500">'{activeFilters.join(' + ')}'에 해당하는 결과가 없습니다</p>
-                      <button
-                        onClick={() => {
-                          setSelectedDistrict(null);
-                          setSelectedCategory('전체');
-                        }}
-                        className="mt-2 text-sm text-indigo-600 hover:underline"
-                      >
-                        필터 초기화
-                      </button>
-                    </div>
-                  ) : (
-                    displayedResults.map((place) => (
-                      <button
-                        key={place.placeId}
-                        onClick={() => handleSelectPlace(place)}
-                        className="w-full p-4 text-left hover:bg-indigo-50 border-b border-gray-100 last:border-b-0 transition-colors"
-                      >
-                        <div className="flex items-start gap-3">
-                          <span className="text-xl">
-                            {place.category === '음식점' ? '🍽️' :
-                              place.category === '카페' ? '☕' :
-                                place.category === '술집' ? '🍺' : '📍'}
-                          </span>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 truncate">{place.name}</p>
-                            <p className="text-sm text-gray-500 truncate">{place.address}</p>
-                            <div className="flex flex-wrap items-center gap-2 mt-1">
-                              <span className="text-xs text-indigo-500">{place.category}</span>
-                              {place.parkingInfo && (
-                                <>
-                                  <span
-                                    className={`text-xs px-2 py-0.5 rounded-full border flex items-center gap-1 cursor-help ${!place.parkingInfo.hasEnoughData
-                                      ? 'bg-gray-50 border-gray-200 text-gray-400'
-                                      : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.7
-                                        ? 'bg-green-50 border-green-200 text-green-700'
-                                        : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.4
-                                          ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
-                                          : 'bg-red-50 border-red-200 text-red-700'
-                                      }`}
-                                    onMouseEnter={(e) => {
-                                      e.stopPropagation();
-                                      const message = place.parkingInfo?.hasEnoughData
-                                        ? "주차 성공률은 실제 방문자들이 남긴 기록을 바탕으로 계산된 참고용 수치입니다."
-                                        : "아직 주차기록이 충분하지 않아요 ☁️";
-                                      handleTooltipEnter(e, message);
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.stopPropagation();
-                                      handleTooltipLeave();
-                                    }}
-                                  >
-                                    {place.parkingInfo.hasEnoughData ? (
-                                      <>
-                                        <span className="font-semibold">🅿️ {Math.round((place.parkingInfo.successRate || 0) * 100)}%</span>
-                                        <span className="mx-1 opacity-40">|</span>
-                                        <span>{place.parkingInfo.recordCount}건</span>
-                                      </>
-                                    ) : (
-                                      <span>🅿️ 데이터 부족</span>
-                                    )}
-                                  </span>
-                                  {place.parkingInfo.hasEnoughData && (
-                                    <span className="text-[10px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded bg-gray-50">
-                                      참고용
-                                    </span>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    ))
-                  )}
-
-                  {/* 더보기 버튼 */}
-                  {hasMore && (
-                    <button
-                      onClick={loadMore}
-                      className="w-full py-3 text-center text-indigo-600 font-medium hover:bg-indigo-50 transition-colors border-t border-gray-100"
-                    >
-                      더보기 ↓ ({filteredResults.length - displayCount}개 남음)
-                    </button>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* 검색 결과 없음 */}
-            {showResults && searchQuery.length >= 2 && (!searchResults || searchResults.length === 0) && !searching && (
-              <div className="absolute z-50 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-200 p-6 text-center animate-fade-in">
-                <p className="text-gray-500">검색 결과가 없습니다</p>
-                <p className="text-xs text-gray-400 mt-1">다른 키워드로 검색해보세요</p>
-              </div>
-            )}
+            {/* 지도 하단 안내 */}
+            <div className="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-gray-600 flex items-center gap-2">
+              <span className="text-red-500">📍</span>
+              <span><b>빨간 마커</b>를 클릭하면 상세 정보를 확인할 수 있어요</span>
+            </div>
           </div>
 
-          {/* 추가된 장소 목록 */}
-          <div className="mt-4 space-y-2">
-            {places.length === 0 && (
-              <div className="text-center py-6 text-gray-400">
+          {/* 검색으로 추가 토글 */}
+          <button
+            onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+            className={`w-full mt-5 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${isSearchExpanded
+              ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-200'
+              : 'bg-white border-2 border-dashed border-gray-300 text-gray-600 hover:border-indigo-400 hover:text-indigo-600'
+              }`}
+          >
+            <span className="text-lg">{isSearchExpanded ? '✕' : '🔍'}</span>
+            <span>{isSearchExpanded ? '검색 닫기' : '검색으로 추가'}</span>
+          </button>
+
+          {/* 인라인 검색 UI */}
+          {isSearchExpanded && (
+            <div className="mt-3 p-4 bg-gray-50 rounded-xl border border-gray-200 animate-slide-up">
+              <SearchModal
+                isOpen={true}
+                onClose={() => setIsSearchExpanded(false)}
+                onSelectPlace={handleSearchSelect}
+                addedPlaceIds={places.map(p => p.placeId)}
+                selectedDistrict={selectedDistrict}
+                isInline={true}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* 선택된 후보 목록 */}
+        <div className="mb-5 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            🗳️ 투표 후보 ({places.length}개)
+          </label>
+
+          <div className="space-y-2">
+            {places.length === 0 ? (
+              <div className="text-center py-6 bg-gray-50 rounded-xl text-gray-400">
                 <p className="text-3xl mb-2">🍽️</p>
-                <p className="text-xs">장소를 검색해서 추가해주세요</p>
+                <p className="text-xs">지도에서 장소를 선택하거나 검색해서 추가해주세요</p>
               </div>
-            )}
-            {places.map((place, index) => (
-              <div
-                key={place.placeId}
-                className="card flex items-center justify-between p-3 animate-scale-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-bold text-xs">
-                    {index + 1}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-medium text-gray-900 truncate text-sm">{place.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{place.address}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleRemovePlace(place.placeId)}
-                  className="w-6 h-6 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all flex items-center justify-center flex-shrink-0"
+            ) : (
+              places.map((place, index) => (
+                <div
+                  key={place.placeId}
+                  className="card flex items-center justify-between p-3 animate-scale-in cursor-pointer hover:border-indigo-400"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                  onClick={() => {
+                    if (place.x && place.y) {
+                      setFocusCoords({ x: place.x, y: place.y });
+                      // 해당 장소 정보창 열기
+                      const kakaoPlace: KakaoPlace = {
+                        placeId: place.placeId,
+                        name: place.name,
+                        address: place.address,
+                        category: place.category,
+                        categoryDetail: place.categoryDetail,
+                        phone: '',
+                        x: place.x,
+                        y: place.y,
+                        parkingInfo: null,
+                      };
+                      setSelectedPlace(kakaoPlace);
+                      setIsBottomSheetOpen(true);
+                    }
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-bold text-xs">
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 truncate text-sm">{place.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{place.address}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemovePlace(place.placeId);
+                    }}
+                    className="w-6 h-6 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all flex items-center justify-center flex-shrink-0"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         {/* 마감 시간 */}
-        <div className="mb-5 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <div className="mb-5 animate-slide-up" style={{ animationDelay: '0.25s' }}>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             ⏰ 투표 마감 시간
           </label>
@@ -522,7 +377,7 @@ export default function HomePage() {
         </div>
 
         {/* 옵션 */}
-        <div className="mb-6 animate-slide-up" style={{ animationDelay: '0.25s' }}>
+        <div className="mb-6 animate-slide-up" style={{ animationDelay: '0.3s' }}>
           <label className="card flex items-center gap-4 p-4 cursor-pointer hover:border-indigo-300">
             <input
               type="checkbox"
@@ -543,39 +398,9 @@ export default function HomePage() {
 
           return (
             <button
-              onClick={() => {
-                if (loading) return;
-
-                // 순서대로 검증하고 토스트 표시
-                if (!title) {
-                  showToast('투표 제목을 입력해주세요');
-                  return;
-                }
-                if (places.length === 0) {
-                  showToast('장소를 선택해주세요');
-                  return;
-                }
-                if (places.length === 1) {
-                  showToast('장소를 하나 더 선택해주세요!');
-                  return;
-                }
-                if (!deadline) {
-                  showToast('마감 시간을 설정해주세요');
-                  return;
-                }
-                // 과거 시간 체크
-                if (new Date(deadline) <= new Date()) {
-                  showToast('마감 시간은 현재 시간 이후로 설정해주세요');
-                  return;
-                }
-
-                handleSubmit();
-              }}
-              className={`w-full btn-primary py-3 ${isDisabled ? 'cursor-not-allowed' : 'animate-slide-up'}`}
-              style={{
-                animationDelay: isDisabled ? undefined : '0.3s',
-                opacity: isDisabled ? 0.5 : 1,
-              }}
+              onClick={handleSubmit}
+              disabled={loading}
+              className={`w-full btn-primary py-3 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -593,24 +418,15 @@ export default function HomePage() {
         })()}
       </main>
 
-      {/* Tooltip Portal */}
-      {mounted && tooltip && tooltip.show && createPortal(
-        <div
-          className="fixed z-[9999] pointer-events-none animate-fade-in"
-          style={{
-            left: `${tooltip.x}px`,
-            top: `${tooltip.y}px`,
-            transform: 'translate(-50%, -100%)',
-            marginTop: '-8px'
-          }}
-        >
-          <div className="bg-gray-900 text-white text-xs py-2 px-3 rounded-lg shadow-xl max-w-xs text-center relative">
-            {tooltip.text}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Bottom Sheet */}
+      <PlaceBottomSheet
+        place={selectedPlace}
+        isOpen={isBottomSheetOpen}
+        onClose={() => setIsBottomSheetOpen(false)}
+        onAddPlace={handleAddPlace}
+        isAlreadyAdded={selectedPlace ? places.some(p => p.placeId === selectedPlace.placeId) : false}
+      />
+
 
       {/* Toast Portal */}
       {mounted && toast && toast.show && createPortal(

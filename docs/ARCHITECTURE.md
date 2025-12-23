@@ -63,6 +63,13 @@ babmoa/
 | GET | `/api/b2b/parking/:placeId` | 주차 통계 조회 |
 | GET | `/api/b2b/parking/bulk` | 다건 조회 |
 
+### 장소 API
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| GET | `/api/places/search` | 장소 검색 (카카오맵) |
+| GET | `/api/places/categories` | 카테고리 목록 |
+| GET | `/api/places/district/:district` | 지역별 장소 목록 (지도 마커용) |
+
 ---
 
 ## 외부 API
