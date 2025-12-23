@@ -275,9 +275,9 @@ export default function HomePage() {
           {/* 검색으로 추가 토글 */}
           <button
             onClick={() => setIsSearchExpanded(!isSearchExpanded)}
-            className={`w-full mt-5 py-3 bg-white border-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${isSearchExpanded
-              ? 'border-indigo-400 text-indigo-600'
-              : 'border-dashed border-gray-300 text-gray-600 hover:border-indigo-400 hover:text-indigo-600'
+            className={`w-full mt-5 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${isSearchExpanded
+              ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-200'
+              : 'bg-white border-2 border-dashed border-gray-300 text-gray-600 hover:border-indigo-400 hover:text-indigo-600'
               }`}
           >
             <span className="text-lg">{isSearchExpanded ? '✕' : '🔍'}</span>
