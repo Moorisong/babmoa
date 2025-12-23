@@ -586,7 +586,7 @@ export default function HomePage() {
       {/* Toast Portal */}
       {mounted && toast && toast.show && createPortal(
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[10000] animate-slide-up">
-          <div className={`px-6 py-3 rounded-full shadow-lg flex items-center gap-2 ${toast.type === 'success' ? 'bg-gray-900 text-white' : 'bg-red-500 text-white'
+          <div className={`px-6 py-3 rounded-full shadow-lg flex items-center gap-2 whitespace-nowrap max-w-[90vw] ${toast.type === 'success' ? 'bg-gray-900 text-white' : 'bg-red-500 text-white'
             }`}>
             <span>{toast.type === 'success' ? '✅' : '⚠️'}</span>
             <span className="font-medium text-sm">{toast.message}</span>

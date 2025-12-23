@@ -12,7 +12,7 @@ interface DateTimePickerProps {
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const MINUTES = [0, 10, 20, 30, 40, 50];
+const MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
 export default function DateTimePicker({
     value,
@@ -35,9 +35,7 @@ export default function DateTimePicker({
     const [selectedHour, setSelectedHour] = useState(selectedDate?.getHours() ?? now.getHours());
     const [selectedMinute, setSelectedMinute] = useState(() => {
         if (selectedDate) return selectedDate.getMinutes();
-        // 현재 분을 10분 단위로 올림
-        const currentMinute = now.getMinutes();
-        return Math.ceil(currentMinute / 10) * 10 % 60;
+        return now.getMinutes();
     });
     const [tempSelectedDate, setTempSelectedDate] = useState<Date | null>(selectedDate);
 
@@ -313,18 +311,36 @@ export default function DateTimePicker({
                         </div>
                         <span className="flex items-center text-lg font-bold text-gray-400">:</span>
                         {/* 분 */}
-                        <div className="flex-1">
-                            <select
-                                value={selectedMinute}
-                                onChange={(e) => setSelectedMinute(Number(e.target.value))}
-                                className="w-full px-2 py-2 rounded-lg border-2 border-gray-200 focus:border-indigo-500 focus:outline-none text-center text-sm font-medium bg-white appearance-none"
-                            >
-                                {MINUTES.map((m) => (
-                                    <option key={m} value={m}>
-                                        {String(m).padStart(2, '0')}분
-                                    </option>
+                        <div className="flex-1 flex flex-col gap-2">
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={String(selectedMinute)}
+                                onFocus={(e) => e.target.select()}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value, 10);
+                                    if (!isNaN(val) && val >= 0 && val <= 59) {
+                                        setSelectedMinute(val);
+                                    } else if (e.target.value === '') {
+                                        setSelectedMinute(0);
+                                    }
+                                }}
+                                className="w-full px-2 py-2 rounded-lg border-2 border-gray-200 focus:border-indigo-500 focus:outline-none text-center text-sm font-medium bg-white"
+                            />
+                            {/* 10분 단위 빠른 선택 */}
+                            <div className="flex gap-1">
+                                {[0, 10, 20, 30, 40, 50].map((m) => (
+                                    <button
+                                        key={m}
+                                        type="button"
+                                        onClick={() => setSelectedMinute(m)}
+                                        className={`flex-1 py-1 text-xs rounded ${selectedMinute === m ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                    >
+                                        {m}
+                                    </button>
                                 ))}
-                            </select>
+                            </div>
                         </div>
                     </div>
                 </div>
