@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { Header, LinkShare, DateTimePicker, PlaceBottomSheet, SearchModal } from '@/components';
 import { roomsApi, KakaoPlace } from '@/lib/api';
+import { canCreateRoom, getRoomCreationCooldownRemaining, setRoomCreatedAt, getParticipantId } from '@/lib/utils';
 
 // KakaoMap은 SSR 비활성화 (window.kakao 필요)
 const KakaoMap = dynamic(() => import('@/components/KakaoMap'), {
@@ -125,6 +126,13 @@ export default function HomePage() {
 
   // 투표방 생성
   const handleSubmit = async () => {
+    // 클라이언트 rate limiting 체크
+    if (!canCreateRoom()) {
+      const remaining = getRoomCreationCooldownRemaining();
+      showToast(`잠시 후 다시 시도해주세요 (${remaining}초 후)`);
+      return;
+    }
+
     if (!title) {
       showToast('투표 제목을 입력해주세요');
       return;
@@ -154,9 +162,12 @@ export default function HomePage() {
           allowPass,
           deadline: new Date(deadline).toISOString(),
         },
+        participantId: getParticipantId(),
       });
 
       if (result.success && result.data) {
+        // 생성 성공 시 시각 기록 (클라이언트 rate limiting용)
+        setRoomCreatedAt();
         setCreatedRoomId(result.data.roomId);
         showToast('투표방이 생성되었습니다!', 'success');
       } else {
