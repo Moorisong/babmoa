@@ -34,6 +34,7 @@ export const roomsApi = {
         title: string;
         places: Array<{ placeId: string; name: string; address: string; category: string; categoryDetail?: string }>;
         options: { allowPass: boolean; deadline: string };
+        participantId: string;
     }) => fetchApi<{ roomId: string }>('/rooms', {
         method: 'POST',
         body: JSON.stringify(data),

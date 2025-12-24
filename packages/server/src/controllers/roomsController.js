@@ -1,9 +1,63 @@
-const { VoteRoom, Vote } = require('../models');
+const { VoteRoom, Vote, IpRateLimit } = require('../models');
+
+// Rate Limiting 설정
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;       // 1분
+const RATE_LIMIT_PER_PARTICIPANT = 1;          // participantId당 1분에 1개
+const RATE_LIMIT_IP_ABUSE_THRESHOLD = 10;      // IP당 1분에 10개 초과 시 악용 의심
+
+// 클라이언트 IP 추출 (프록시/로드밸런서 고려)
+function getClientIp(req) {
+    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+        req.headers['x-real-ip'] ||
+        req.connection?.remoteAddress ||
+        req.ip ||
+        'unknown';
+}
 
 // POST /api/rooms - 투표방 생성
 exports.createRoom = async (req, res) => {
     try {
-        const { title, places, options } = req.body;
+        const { title, places, options, participantId } = req.body;
+        const clientIp = getClientIp(req);
+
+        // participantId 필수 체크
+        if (!participantId) {
+            return res.status(400).json({
+                success: false,
+                error: { code: 'INVALID_REQUEST', message: 'participantId는 필수입니다' }
+            });
+        }
+
+        const oneMinuteAgo = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
+
+        // 1단계: IP + participantId 조합 (1분에 1개)
+        const participantCount = await IpRateLimit.countDocuments({
+            ip: clientIp,
+            participantId: participantId,
+            action: 'room_create',
+            createdAt: { $gte: oneMinuteAgo }
+        });
+
+        if (participantCount >= RATE_LIMIT_PER_PARTICIPANT) {
+            return res.status(429).json({
+                success: false,
+                error: { code: 'RATE_LIMITED', message: '잠시 후 다시 시도해주세요 (1분에 1개 생성 가능)' }
+            });
+        }
+
+        // 2단계: IP 단위 속도 기반 차단 (1분에 10개 초과 = 악용)
+        const ipCount = await IpRateLimit.countDocuments({
+            ip: clientIp,
+            action: 'room_create',
+            createdAt: { $gte: oneMinuteAgo }
+        });
+
+        if (ipCount >= RATE_LIMIT_IP_ABUSE_THRESHOLD) {
+            return res.status(429).json({
+                success: false,
+                error: { code: 'IP_BLOCKED', message: '과도한 요청이 감지되었습니다. 잠시 후 다시 시도해주세요' }
+            });
+        }
 
         // 유효성 검사
         if (!title || !places || places.length === 0) {
@@ -27,6 +81,13 @@ exports.createRoom = async (req, res) => {
                 allowPass: options.allowPass ?? true,
                 deadline: new Date(options.deadline)
             }
+        });
+
+        // Rate Limit 로그 기록
+        await IpRateLimit.create({
+            ip: clientIp,
+            participantId: participantId,
+            action: 'room_create'
         });
 
         res.status(201).json({
