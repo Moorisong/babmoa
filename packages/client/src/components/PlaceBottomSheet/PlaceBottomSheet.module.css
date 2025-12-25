@@ -1,0 +1,244 @@
+.backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 40;
+    transition: opacity 0.3s;
+}
+
+.backdropHidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: white;
+    border-radius: 1.5rem 1.5rem 0 0;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-height: 70vh;
+    touch-action: none;
+}
+
+.sheetAnimated {
+    transition: transform 0.3s ease-out;
+}
+
+.sheetHidden {
+    transform: translateY(100%);
+}
+
+.handle {
+    display: flex;
+    justify-content: center;
+    padding: 0.75rem 0 0.5rem;
+}
+
+.handleBar {
+    width: 2.5rem;
+    height: 0.25rem;
+    background-color: #d1d5db;
+    border-radius: 9999px;
+}
+
+.content {
+    padding: 0 1.25rem 1.5rem;
+    overflow-y: auto;
+    max-height: calc(70vh - 40px);
+}
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.headerInfo {
+    flex: 1;
+    min-width: 0;
+    padding-right: 1rem;
+}
+
+.title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.address {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.closeBtn {
+    padding: 0.5rem;
+    border-radius: 9999px;
+    flex-shrink: 0;
+    transition: background-color 0.2s;
+}
+
+.closeBtn:hover {
+    background-color: #f3f4f6;
+}
+
+.closeIcon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #9ca3af;
+}
+
+.categoryRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.categoryBadge {
+    font-size: 0.75rem;
+    background-color: #eef2ff;
+    color: #4f46e5;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+}
+
+.categoryDetail {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.parkingSection {
+    background-color: #f9fafb;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.parkingHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.parkingTitle {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.referenceTag {
+    font-size: 10px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    color: #9ca3af;
+}
+
+.parkingBadgeRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.parkingBadge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid;
+}
+
+.parkingBadgeGreen {
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #15803d;
+}
+
+.parkingBadgeYellow {
+    background-color: #fefce8;
+    border-color: #fef08a;
+    color: #a16207;
+}
+
+.parkingBadgeRed {
+    background-color: #fef2f2;
+    border-color: #fecaca;
+    color: #b91c1c;
+}
+
+.parkingBadgeGray {
+    background-color: #f9fafb;
+    border-color: #e5e7eb;
+    color: #9ca3af;
+}
+
+.parkingStats {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.parkingHint {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 0.5rem;
+}
+
+.kakaoBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    background-color: #facc15;
+    color: #78350f;
+    font-weight: 500;
+    border-radius: 0.75rem;
+    transition: background-color 0.2s;
+}
+
+.kakaoBtn:hover {
+    background-color: #eab308;
+}
+
+.kakaoIcon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.addBtn {
+    width: 100%;
+    padding: 0.875rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.addBtnPrimary {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+}
+
+.addBtnPrimary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px -1px rgba(99, 102, 241, 0.4);
+}
+
+.addBtnDisabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+}

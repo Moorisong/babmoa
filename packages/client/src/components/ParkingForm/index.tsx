@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import classNames from 'classnames';
+import styles from './ParkingForm.module.css';
 
 type ParkingStep = 'available' | 'experience';
 
@@ -34,48 +36,46 @@ export default function ParkingForm({ onSubmit, loading = false }: ParkingFormPr
 
     if (loading) {
         return (
-            <div className="flex-center flex-col py-12 animate-fade-in">
-                <div className="relative mb-6">
-                    <div className="spinner"></div>
-                    <div className="spinner-active"></div>
+            <div className={styles.loadingContainer}>
+                <div className={styles.spinnerWrapper}>
+                    <div className={styles.spinner}></div>
+                    <div className={styles.spinnerActive}></div>
                 </div>
-                <p className="text-lg font-semibold text-gray-900 mb-2">기록 중...</p>
-                <p className="text-caption">잠시만 기다려주세요</p>
+                <p className={styles.loadingText}>기록 중...</p>
+                <p className={styles.loadingSubtext}>잠시만 기다려주세요</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className={styles.container}>
             {step === 'available' && (
                 <>
-                    <h3 className="text-xl font-bold text-gray-900 text-center">
-                        주차장이 있었나요?
-                    </h3>
-                    <div className="grid grid-cols-1 gap-md">
+                    <h3 className={styles.title}>주차장이 있었나요?</h3>
+                    <div className={styles.optionsGrid}>
                         <button
                             onClick={() => handleAvailableSelect(true)}
                             disabled={loading}
-                            className="form-option-btn form-option-btn-blue"
+                            className={classNames(styles.optionBtn, styles.optionBtnBlue)}
                         >
-                            <span className="text-2xl mb-2 block">🅿️</span>
-                            <span className="font-medium">있었어요</span>
+                            <span className={styles.emoji}>🅿️</span>
+                            <span className={styles.label}>있었어요</span>
                         </button>
                         <button
                             onClick={() => handleAvailableSelect(false)}
                             disabled={loading}
-                            className="form-option-btn form-option-btn-orange"
+                            className={classNames(styles.optionBtn, styles.optionBtnOrange)}
                         >
-                            <span className="text-2xl mb-2 block">❌</span>
-                            <span className="font-medium">없었어요</span>
+                            <span className={styles.emoji}>❌</span>
+                            <span className={styles.label}>없었어요</span>
                         </button>
                         <button
                             onClick={() => handleAvailableSelect(null)}
                             disabled={loading}
-                            className="form-option-btn"
+                            className={styles.optionBtn}
                         >
-                            <span className="text-2xl mb-2 block">🤔</span>
-                            <span className="font-medium text-muted">잘 모르겠어요</span>
+                            <span className={styles.emoji}>🤔</span>
+                            <span className={styles.labelMuted}>잘 모르겠어요</span>
                         </button>
                     </div>
                 </>
@@ -83,41 +83,39 @@ export default function ParkingForm({ onSubmit, loading = false }: ParkingFormPr
 
             {step === 'experience' && (
                 <>
-                    <h3 className="text-xl font-bold text-gray-900 text-center">
-                        주차는 어땠나요?
-                    </h3>
-                    <div className="grid grid-cols-1 gap-md">
+                    <h3 className={styles.title}>주차는 어땠나요?</h3>
+                    <div className={styles.optionsGrid}>
                         <button
                             onClick={() => handleExperienceSelect('문제없음')}
                             disabled={loading}
-                            className="form-option-btn form-option-btn-green"
+                            className={classNames(styles.optionBtn, styles.optionBtnGreen)}
                         >
-                            <span className="text-2xl mb-2 block">😊</span>
-                            <span className="font-medium">문제없었어요</span>
+                            <span className={styles.emoji}>😊</span>
+                            <span className={styles.label}>문제없었어요</span>
                         </button>
                         <button
                             onClick={() => handleExperienceSelect('조금불편')}
                             disabled={loading}
-                            className="form-option-btn form-option-btn-yellow"
+                            className={classNames(styles.optionBtn, styles.optionBtnYellow)}
                         >
-                            <span className="text-2xl mb-2 block">😐</span>
-                            <span className="font-medium">조금 불편했어요</span>
+                            <span className={styles.emoji}>😐</span>
+                            <span className={styles.label}>조금 불편했어요</span>
                         </button>
                         <button
                             onClick={() => handleExperienceSelect('못함')}
                             disabled={loading}
-                            className="form-option-btn form-option-btn-red"
+                            className={classNames(styles.optionBtn, styles.optionBtnRed)}
                         >
-                            <span className="text-2xl mb-2 block">😢</span>
-                            <span className="font-medium">못 했어요</span>
+                            <span className={styles.emoji}>😢</span>
+                            <span className={styles.label}>못 했어요</span>
                         </button>
                         <button
                             onClick={() => handleExperienceSelect('모름')}
                             disabled={loading}
-                            className="form-option-btn"
+                            className={styles.optionBtn}
                         >
-                            <span className="text-2xl mb-2 block">🤔</span>
-                            <span className="font-medium text-muted">잘 모르겠어요</span>
+                            <span className={styles.emoji}>🤔</span>
+                            <span className={styles.labelMuted}>잘 모르겠어요</span>
                         </button>
                     </div>
                 </>

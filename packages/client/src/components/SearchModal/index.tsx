@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import classNames from 'classnames';
 import { placesApi, KakaoPlace } from '@/lib/api';
+import styles from './SearchModal.module.css';
 
 interface SearchModalProps {
     isOpen: boolean;
@@ -21,7 +23,6 @@ export default function SearchModal({
     onClose,
     onSelectPlace,
     addedPlaceIds,
-    selectedDistrict: initialDistrict,
     isInline = false
 }: SearchModalProps) {
     const [mounted, setMounted] = useState(false);
@@ -37,14 +38,12 @@ export default function SearchModal({
         setMounted(true);
     }, []);
 
-    // 포커스 (모달 모드에서만)
     useEffect(() => {
         if (isOpen && inputRef.current && !isInline) {
             setTimeout(() => inputRef.current?.focus(), 100);
         }
     }, [isOpen, isInline]);
 
-    // 검색 함수
     const performSearch = async (query: string) => {
         if (query.trim().length < 2) {
             setSearchResults([]);
@@ -64,7 +63,6 @@ export default function SearchModal({
         }
     };
 
-    // 검색 디바운스
     useEffect(() => {
         if (debounceRef.current) {
             clearTimeout(debounceRef.current);
@@ -84,7 +82,6 @@ export default function SearchModal({
         };
     }, [searchQuery]);
 
-    // 필터링된 결과
     const filteredResults = searchResults.filter(place => {
         if (selectedDistrict && !place.address.includes(selectedDistrict)) {
             return false;
@@ -105,23 +102,35 @@ export default function SearchModal({
         }
     };
 
-    // 검색 UI 콘텐츠
+    const getParkingBadgeClass = (successRate: number | null) => {
+        if (successRate === null) return styles.parkingDanger;
+        if (successRate >= 0.7) return styles.parkingSuccess;
+        if (successRate >= 0.4) return styles.parkingWarning;
+        return styles.parkingDanger;
+    };
+
+    const getPlaceEmoji = (category: string) => {
+        if (category === '음식점') return '🍽️';
+        if (category === '카페') return '☕';
+        if (category === '술집') return '🍺';
+        return '📍';
+    };
+
     const searchContent = (
         <>
-            {/* 검색 입력 */}
-            <div className={isInline ? 'mb-3' : 'px-5 py-3 border-b border-gray-100'}>
-                <div className="relative">
+            <div className={isInline ? styles.inputWrapper : `${styles.inputWrapper} px-5 py-3 border-b border-gray-100`}>
+                <div className={styles.inputContainer}>
                     <input
                         ref={inputRef}
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="가게 이름, 지역 이름, 메뉴 등"
-                        className="input-field py-3 pr-10"
+                        className={styles.input}
                     />
                     {searching && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                            <svg className="animate-spin w-5 h-5 text-indigo-500" viewBox="0 0 24 24" fill="none">
+                        <div className={styles.spinner}>
+                            <svg className={styles.spinnerIcon} viewBox="0 0 24 24" fill="none">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                             </svg>
@@ -130,34 +139,25 @@ export default function SearchModal({
                 </div>
             </div>
 
-            {/* 필터 */}
-            <div className={isInline ? 'mb-3 space-y-2' : 'px-5 py-3 border-b border-gray-100 space-y-2'}>
-                {/* 지역 필터 */}
-                <div className="flex gap-2 flex-wrap">
+            <div className={isInline ? styles.filtersSection : styles.filtersModal}>
+                <div className={styles.districtFilters}>
                     {DISTRICTS.map((district) => (
                         <button
                             key={district}
                             onClick={() => setSelectedDistrict(selectedDistrict === district ? null : district)}
-                            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${selectedDistrict === district
-                                ? 'bg-indigo-500 text-white'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                }`}
+                            className={selectedDistrict === district ? styles.filterBtnActive : styles.filterBtnInactive}
                         >
                             📍 {district}
                         </button>
                     ))}
                 </div>
 
-                {/* 카테고리 필터 */}
-                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                <div className={styles.categoryFilters}>
                     {CATEGORIES.map((cat) => (
                         <button
                             key={cat}
                             onClick={() => setSelectedCategory(cat)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${selectedCategory === cat
-                                ? 'bg-indigo-500 text-white'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                }`}
+                            className={selectedCategory === cat ? styles.categoryBtnActive : styles.categoryBtnInactive}
                         >
                             {cat}
                         </button>
@@ -165,17 +165,16 @@ export default function SearchModal({
                 </div>
             </div>
 
-            {/* 검색 결과 */}
-            <div className={isInline ? 'max-h-[300px] overflow-y-auto rounded-lg border border-gray-200' : 'flex-1 overflow-y-auto'}>
+            <div className={isInline ? styles.resultsInline : styles.resultsModal}>
                 {searchQuery.length < 2 ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                        <span className="text-3xl mb-2">🍽️</span>
-                        <p className="text-sm text-center">검색어를 2글자 이상 입력해주세요</p>
+                    <div className={styles.emptyState}>
+                        <span className={styles.emptyEmoji}>🍽️</span>
+                        <p className={styles.emptyText}>검색어를 2글자 이상 입력해주세요</p>
                     </div>
                 ) : filteredResults.length === 0 && !searching ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                        <span className="text-3xl mb-2">😢</span>
-                        <p className="text-sm text-center">검색 결과가 없습니다</p>
+                    <div className={styles.emptyState}>
+                        <span className={styles.emptyEmoji}>😢</span>
+                        <p className={styles.emptyText}>검색 결과가 없습니다</p>
                     </div>
                 ) : (
                     filteredResults.map((place) => {
@@ -185,34 +184,23 @@ export default function SearchModal({
                                 key={place.placeId}
                                 onClick={() => handleSelectPlace(place)}
                                 disabled={isAdded}
-                                className={`w-full p-3 text-left border-b border-gray-100 transition-colors ${isAdded ? 'bg-gray-50 opacity-60' : 'hover:bg-indigo-50'
-                                    }`}
+                                className={styles.resultItem}
                             >
-                                <div className="flex items-start gap-3">
-                                    <span className="text-xl">
-                                        {place.category === '음식점' ? '🍽️' :
-                                            place.category === '카페' ? '☕' :
-                                                place.category === '술집' ? '🍺' : '📍'}
-                                    </span>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-medium text-gray-900 truncate text-sm">{place.name}</p>
-                                            {isAdded && (
-                                                <span className="text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">
-                                                    추가됨
-                                                </span>
-                                            )}
+                                <div className={styles.resultContent}>
+                                    <span className={styles.resultEmoji}>{getPlaceEmoji(place.category)}</span>
+                                    <div className={styles.resultInfo}>
+                                        <div className={styles.resultHeader}>
+                                            <p className={styles.resultName}>{place.name}</p>
+                                            {isAdded && <span className={styles.addedBadge}>추가됨</span>}
                                         </div>
-                                        <p className="text-xs text-gray-500 truncate">{place.address}</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-xs text-indigo-500">{place.category}</span>
+                                        <p className={styles.resultAddress}>{place.address}</p>
+                                        <div className={styles.resultMeta}>
+                                            <span className={styles.resultCategory}>{place.category}</span>
                                             {place.parkingInfo?.hasEnoughData && (
-                                                <span className={`text-xs px-2 py-0.5 rounded-full border ${place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.7
-                                                    ? 'bg-green-50 border-green-200 text-green-700'
-                                                    : place.parkingInfo.successRate !== null && place.parkingInfo.successRate >= 0.4
-                                                        ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
-                                                        : 'bg-red-50 border-red-200 text-red-700'
-                                                    }`}>
+                                                <span className={classNames(
+                                                    styles.parkingBadge,
+                                                    getParkingBadgeClass(place.parkingInfo.successRate)
+                                                )}>
                                                     🅿️ {Math.round((place.parkingInfo.successRate || 0) * 100)}%
                                                 </span>
                                             )}
@@ -227,36 +215,24 @@ export default function SearchModal({
         </>
     );
 
-    // 인라인 모드: 래퍼 없이 콘텐츠만 반환
     if (isInline) {
         return searchContent;
     }
 
-    // 모달 모드
     if (!mounted) return null;
 
     return createPortal(
         <>
-            {/* Backdrop */}
             <div
-                className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                    }`}
+                className={classNames(styles.backdrop, { [styles.backdropHidden]: !isOpen })}
                 onClick={onClose}
             />
 
-            {/* Modal */}
-            <div
-                className={`fixed inset-x-4 top-[5vh] bottom-[5vh] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-full md:max-w-lg z-[70] bg-white rounded-2xl shadow-2xl flex flex-col transition-all duration-300 ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
-                    }`}
-            >
-                {/* 헤더 */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-900">🔎 식당 검색해서 추가</h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                    >
-                        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className={classNames(styles.modal, { [styles.modalHidden]: !isOpen })}>
+                <div className={styles.modalHeader}>
+                    <h2 className={styles.modalTitle}>🔎 식당 검색해서 추가</h2>
+                    <button onClick={onClose} className={styles.closeBtn}>
+                        <svg className={styles.closeIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>

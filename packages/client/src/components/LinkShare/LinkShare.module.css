@@ -1,0 +1,63 @@
+.container {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    transition: all 0.2s;
+}
+
+.secondary {
+    composes: button;
+    background-color: #f3f4f6;
+}
+
+.secondary:hover {
+    background-color: #e5e7eb;
+}
+
+.primary {
+    composes: button;
+    background-color: #6366f1;
+    color: white;
+}
+
+.primary:hover {
+    background-color: #4f46e5;
+}
+
+.icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.iconSuccess {
+    composes: icon;
+    color: #22c55e;
+}
+
+.iconGray {
+    composes: icon;
+    color: #4b5563;
+}
+
+.textSuccess {
+    font-weight: 500;
+    color: #16a34a;
+}
+
+.textGray {
+    font-weight: 500;
+    color: #374151;
+}
+
+.textWhite {
+    font-weight: 500;
+}

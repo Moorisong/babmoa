@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import classNames from 'classnames';
+import styles from './DateTimePicker.module.css';
 
 interface DateTimePickerProps {
     value: string;
@@ -12,20 +14,17 @@ interface DateTimePickerProps {
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
 export default function DateTimePicker({
     value,
     onChange,
     placeholder = '마감 시간을 선택하세요',
-    minDate = new Date(),
 }: DateTimePickerProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const pickerRef = useRef<HTMLDivElement>(null);
 
-    // 현재 선택된 날짜 파싱
     const selectedDate = value ? new Date(value) : null;
     const now = new Date();
     const [viewMonth, setViewMonth] = useState(() => {
@@ -43,14 +42,12 @@ export default function DateTimePicker({
         setMounted(true);
     }, []);
 
-    // 피커 열릴 때 오늘 자동 선택
     useEffect(() => {
         if (isOpen && !tempSelectedDate) {
             setTempSelectedDate(new Date());
         }
-    }, [isOpen]);
+    }, [isOpen, tempSelectedDate]);
 
-    // 외부 클릭 감지
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             if (
@@ -65,7 +62,6 @@ export default function DateTimePicker({
 
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
-            // 모바일에서 스크롤 방지
             document.body.style.overflow = 'hidden';
         }
 
@@ -75,33 +71,24 @@ export default function DateTimePicker({
         };
     }, [isOpen]);
 
-    // 달력 데이터 생성 (항상 6줄 = 42칸 고정)
     const generateCalendarDays = () => {
         const year = viewMonth.getFullYear();
         const month = viewMonth.getMonth();
-
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         const startPadding = firstDay.getDay();
         const totalDays = lastDay.getDate();
-
         const days: (Date | null)[] = [];
 
-        // 이전 달 빈칸
         for (let i = 0; i < startPadding; i++) {
             days.push(null);
         }
-
-        // 현재 달 날짜
         for (let i = 1; i <= totalDays; i++) {
             days.push(new Date(year, month, i));
         }
-
-        // 뒤쪽 빈칸 (항상 42칸 = 6줄로 맞추기)
         while (days.length < 42) {
             days.push(null);
         }
-
         return days;
     };
 
@@ -122,13 +109,11 @@ export default function DateTimePicker({
             const newDate = new Date(tempSelectedDate);
             newDate.setHours(selectedHour, selectedMinute, 0, 0);
 
-            // 과거 시간 체크
             if (newDate <= new Date()) {
                 alert('현재 시간 이후로 설정해주세요');
                 return;
             }
 
-            // datetime-local 형식: "YYYY-MM-DDTHH:mm"
             const year = newDate.getFullYear();
             const month = String(newDate.getMonth() + 1).padStart(2, '0');
             const day = String(newDate.getDate()).padStart(2, '0');
@@ -167,54 +152,54 @@ export default function DateTimePicker({
         const minute = String(d.getMinutes()).padStart(2, '0');
         const ampm = hour < 12 ? '오전' : '오후';
         const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-
         return `${month}월 ${day}일 (${dayName}) ${ampm} ${displayHour}:${minute}`;
     };
 
     const calendarDays = generateCalendarDays();
 
-    const pickerContent = (
-        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center">
-            {/* 백드롭 */}
-            <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-                onClick={() => setIsOpen(false)}
-            />
+    const getDateClass = (date: Date) => {
+        const disabled = isDateDisabled(date);
+        const selected = isSameDay(date, tempSelectedDate);
+        const today = isToday(date);
+        const dayOfWeek = date.getDay();
 
-            {/* 피커 컨테이너 */}
-            <div
-                ref={pickerRef}
-                className="relative bg-white w-full max-w-sm sm:rounded-2xl rounded-t-2xl shadow-2xl animate-slide-up overflow-hidden"
-            >
-                {/* 헤더 */}
-                <div className="px-4 py-3 border-b border-gray-100">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-base font-bold text-gray-900">📅 마감 시간 선택</h3>
-                        <button
-                            onClick={() => setIsOpen(false)}
-                            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                        >
-                            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
+        if (disabled) return styles.dateDisabled;
+        if (selected) return styles.dateSelected;
+        if (today) return styles.dateToday;
+        if (dayOfWeek === 0) return styles.dateSun;
+        if (dayOfWeek === 6) return styles.dateSat;
+        return styles.dateWeek;
+    };
+
+    const getDayHeaderClass = (idx: number) => {
+        if (idx === 0) return styles.dayHeaderSun;
+        if (idx === 6) return styles.dayHeaderSat;
+        return styles.dayHeaderWeek;
+    };
+
+    const pickerContent = (
+        <div className={styles.overlay}>
+            <div className={styles.backdrop} onClick={() => setIsOpen(false)} />
+
+            <div ref={pickerRef} className={styles.container}>
+                <div className={styles.header}>
+                    <h3 className={styles.headerTitle}>📅 마감 시간 선택</h3>
+                    <button onClick={() => setIsOpen(false)} className={styles.closeBtn}>
+                        <svg className={styles.closeIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
-                {/* 달력 */}
-                <div className="px-4 py-3">
-                    {/* 월 네비게이션 */}
-                    <div className="flex items-center justify-between mb-3">
-                        <button
-                            onClick={handlePrevMonth}
-                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                        >
-                            <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className={styles.calendarSection}>
+                    <div className={styles.monthNav}>
+                        <button onClick={handlePrevMonth} className={styles.navBtn}>
+                            <svg className={styles.navIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
-                        <div className="flex items-center gap-2">
-                            <span className="text-base font-bold text-gray-900">
+                        <div className={styles.monthTitle}>
+                            <span className={styles.monthText}>
                                 {viewMonth.getFullYear()}년 {viewMonth.getMonth() + 1}월
                             </span>
                             <button
@@ -223,66 +208,40 @@ export default function DateTimePicker({
                                     setViewMonth(new Date(today.getFullYear(), today.getMonth(), 1));
                                     setTempSelectedDate(today);
                                 }}
-                                className="px-2 py-0.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-full hover:bg-indigo-100 transition-colors"
+                                className={styles.todayBtn}
                             >
                                 오늘
                             </button>
                         </div>
-                        <button
-                            onClick={handleNextMonth}
-                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                        >
-                            <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button onClick={handleNextMonth} className={styles.navBtn}>
+                            <svg className={styles.navIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                         </button>
                     </div>
 
-                    {/* 요일 헤더 */}
-                    <div className="grid grid-cols-7 gap-0.5 mb-1">
+                    <div className={styles.daysGrid}>
                         {DAYS.map((day, i) => (
-                            <div
-                                key={day}
-                                className={`text-center text-xs font-medium py-1 ${i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-gray-400'
-                                    }`}
-                            >
+                            <div key={day} className={classNames(styles.dayHeader, getDayHeaderClass(i))}>
                                 {day}
                             </div>
                         ))}
                     </div>
 
-                    {/* 날짜 그리드 */}
-                    <div className="grid grid-cols-7 gap-0.5">
+                    <div className={styles.datesGrid}>
                         {calendarDays.map((date, idx) => {
                             if (!date) {
-                                return <div key={`empty-${idx}`} className="w-9 h-9 sm:w-8 sm:h-8" />;
+                                return <div key={`empty-${idx}`} className={styles.dateEmpty} />;
                             }
 
                             const disabled = isDateDisabled(date);
-                            const selected = isSameDay(date, tempSelectedDate);
-                            const today = isToday(date);
-                            const dayOfWeek = date.getDay();
 
                             return (
                                 <button
                                     key={date.toISOString()}
                                     onClick={() => !disabled && handleDateSelect(date)}
                                     disabled={disabled}
-                                    className={`
-                                        w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-all
-                                        ${disabled
-                                            ? 'text-gray-300 cursor-not-allowed'
-                                            : selected
-                                                ? 'bg-indigo-500 text-white shadow-md'
-                                                : today
-                                                    ? 'bg-indigo-50 text-indigo-600 font-bold'
-                                                    : dayOfWeek === 0
-                                                        ? 'text-red-500 hover:bg-red-50'
-                                                        : dayOfWeek === 6
-                                                            ? 'text-blue-500 hover:bg-blue-50'
-                                                            : 'text-gray-700 hover:bg-gray-100'
-                                        }
-                                    `}
+                                    className={classNames(styles.dateBtn, getDateClass(date))}
                                 >
                                     {date.getDate()}
                                 </button>
@@ -291,16 +250,14 @@ export default function DateTimePicker({
                     </div>
                 </div>
 
-                {/* 시간 선택 */}
-                <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
-                    <p className="text-sm font-medium text-gray-700 mb-2">⏰ 시간 선택</p>
-                    <div className="flex gap-2">
-                        {/* 시 */}
-                        <div className="flex-1">
+                <div className={styles.timeSection}>
+                    <p className={styles.timeLabel}>⏰ 시간 선택</p>
+                    <div className={styles.timeInputs}>
+                        <div className={styles.timeSelect}>
                             <select
                                 value={selectedHour}
                                 onChange={(e) => setSelectedHour(Number(e.target.value))}
-                                className="w-full px-2 py-2 rounded-lg border-2 border-gray-200 focus:border-indigo-500 focus:outline-none text-center text-sm font-medium bg-white appearance-none"
+                                className={styles.select}
                             >
                                 {HOURS.map((h) => (
                                     <option key={h} value={h}>
@@ -309,9 +266,8 @@ export default function DateTimePicker({
                                 ))}
                             </select>
                         </div>
-                        <span className="flex items-center text-lg font-bold text-gray-400">:</span>
-                        {/* 분 */}
-                        <div className="flex-1 flex flex-col gap-2">
+                        <span className={styles.timeSeparator}>:</span>
+                        <div className={styles.minuteSection}>
                             <input
                                 type="text"
                                 inputMode="numeric"
@@ -326,16 +282,15 @@ export default function DateTimePicker({
                                         setSelectedMinute(0);
                                     }
                                 }}
-                                className="w-full px-2 py-2 rounded-lg border-2 border-gray-200 focus:border-indigo-500 focus:outline-none text-center text-sm font-medium bg-white"
+                                className={styles.minuteInput}
                             />
-                            {/* 10분 단위 빠른 선택 */}
-                            <div className="flex gap-1">
+                            <div className={styles.quickMinutes}>
                                 {[0, 10, 20, 30, 40, 50].map((m) => (
                                     <button
                                         key={m}
                                         type="button"
                                         onClick={() => setSelectedMinute(m)}
-                                        className={`flex-1 py-1 text-xs rounded ${selectedMinute === m ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                        className={selectedMinute === m ? styles.quickBtnActive : styles.quickBtnInactive}
                                     >
                                         {m}
                                     </button>
@@ -345,12 +300,11 @@ export default function DateTimePicker({
                     </div>
                 </div>
 
-                {/* 확인 버튼 */}
-                <div className="px-4 py-3 border-t border-gray-100">
+                <div className={styles.footer}>
                     <button
                         onClick={handleConfirm}
                         disabled={!tempSelectedDate}
-                        className="w-full py-2.5 btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={styles.confirmBtn}
                     >
                         {tempSelectedDate
                             ? `${tempSelectedDate.getMonth() + 1}월 ${tempSelectedDate.getDate()}일 ${selectedHour < 12 ? '오전' : '오후'} ${selectedHour === 0 ? 12 : selectedHour > 12 ? selectedHour - 12 : selectedHour}:${String(selectedMinute).padStart(2, '0')} 선택`
@@ -367,12 +321,12 @@ export default function DateTimePicker({
                 ref={triggerRef}
                 type="button"
                 onClick={() => setIsOpen(true)}
-                className="input-field py-3 text-sm w-full cursor-pointer text-left flex items-center justify-between"
+                className={styles.trigger}
             >
-                <span className={value ? 'text-gray-900' : 'text-gray-400'}>
+                <span className={value ? styles.triggerValue : styles.triggerPlaceholder}>
                     {formatDisplayValue() || placeholder}
                 </span>
-                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={styles.triggerIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
             </button>
