@@ -41,7 +41,7 @@
 
 | 영역 | 기술 |
 |------|------|
-| **Frontend** | Next.js 15, React 19, TypeScript, Tailwind CSS |
+| **Frontend** | Next.js 15, React 19, TypeScript, CSS Modules |
 | **Backend** | Node.js, Express |
 | **Database** | MongoDB |
 | **External API** | Kakao Maps API (서버 전용) |
@@ -57,7 +57,11 @@ babmoa/
 │   ├── client/              # Next.js 프론트엔드
 │   │   └── src/
 │   │       ├── app/         # 페이지 (App Router)
-│   │       ├── components/  # 컴포넌트
+│   │       │   └── *.module.css  # 페이지별 CSS Modules
+│   │       ├── components/  # 컴포넌트 (디렉토리 구조)
+│   │       │   └── ComponentName/
+│   │       │       ├── index.tsx
+│   │       │       └── ComponentName.module.css
 │   │       └── lib/         # API 클라이언트, utils
 │   └── server/              # Express 백엔드
 │       └── src/
