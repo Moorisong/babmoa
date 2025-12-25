@@ -42,7 +42,11 @@ export default function PlaceBottomSheet({
     const sheetRef = useRef<HTMLDivElement>(null);
 
     const onCloseRef = useRef(onClose);
-    onCloseRef.current = onClose;
+
+    // onClose가 변경될 때 ref 업데이트 (렌더링 중 ref 업데이트 방지)
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
 
     // 터치 핸들러들을 useCallback으로 메모이제이션
     const handleTouchStart = useCallback((e: TouchEvent) => {
