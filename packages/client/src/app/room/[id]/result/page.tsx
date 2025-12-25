@@ -4,27 +4,12 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Header, VoteCard, LinkShare } from '@/components';
-import { roomsApi, ParkingInfo } from '@/lib/api';
+import { ROUTES } from '@/constants';
+import { roomsApi } from '@/lib/api';
+import type { Room } from '@/types';
 import { hasRecordedParking } from '@/lib/utils';
 
-interface Place {
-    placeId: string;
-    name: string;
-    address: string;
-    category: string;
-    categoryDetail?: string;
-    parkingInfo?: ParkingInfo | null;
-}
-
-interface Room {
-    roomId: string;
-    title: string;
-    places: Place[];
-    options: { allowPass: boolean; deadline: string };
-    result: { winnerPlaceId: string | null; decidedAt: string | null };
-}
-
-interface VoteResult {
+interface VoteResultItem {
     placeId: string | null;
     count: number;
 }
@@ -35,7 +20,7 @@ export default function ResultPage() {
     const roomId = params.id as string;
 
     const [room, setRoom] = useState<Room | null>(null);
-    const [votes, setVotes] = useState<VoteResult[]>([]);
+    const [votes, setVotes] = useState<VoteResultItem[]>([]);
     const [winnerPlaceId, setWinnerPlaceId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -57,7 +42,7 @@ export default function ResultPage() {
         setRoom(roomResult.data);
 
         if (new Date() < new Date(roomResult.data.options.deadline)) {
-            router.replace(`/room/${roomId}`);
+            router.replace(ROUTES.ROOM(roomId));
             return;
         }
 
@@ -197,7 +182,7 @@ export default function ResultPage() {
                             방문하셨나요? 주차 경험을 공유해주세요!
                         </p>
                         <Link
-                            href={`/room/${roomId}/parking`}
+                            href={ROUTES.ROOM_PARKING(roomId)}
                             className="block w-full py-3 text-center btn-primary"
                         >
                             주차 경험 기록하기 →

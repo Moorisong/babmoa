@@ -1,0 +1,30 @@
+/**
+ * API 에러 코드 상수
+ * 컨벤션: 에러 코드는 반드시 상수로 관리
+ */
+
+module.exports = {
+    // 일반 에러
+    NOT_FOUND: 'NOT_FOUND',
+    INVALID_REQUEST: 'INVALID_REQUEST',
+    SERVER_ERROR: 'SERVER_ERROR',
+
+    // Rate Limiting
+    RATE_LIMITED: 'RATE_LIMITED',
+    IP_BLOCKED: 'IP_BLOCKED',
+
+    // 투표 관련
+    VOTE_CLOSED: 'VOTE_CLOSED',
+    PASS_NOT_ALLOWED: 'PASS_NOT_ALLOWED',
+    ROOM_NOT_FOUND: 'ROOM_NOT_FOUND',
+
+    // 장소 관련
+    INVALID_DISTRICT: 'INVALID_DISTRICT',
+
+    // 주차 데이터 관련
+    PARKING_ALREADY_RECORDED: 'PARKING_ALREADY_RECORDED',
+    INVALID_PARKING_DATA: 'INVALID_PARKING_DATA',
+
+    // 네트워크
+    NETWORK_ERROR: 'NETWORK_ERROR',
+};

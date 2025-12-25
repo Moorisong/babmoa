@@ -5,7 +5,9 @@ import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { Header, LinkShare, DateTimePicker, PlaceBottomSheet, SearchModal } from '@/components';
-import { roomsApi, KakaoPlace } from '@/lib/api';
+import { ROUTES, CONFIG, type District } from '@/constants';
+import { roomsApi } from '@/lib/api';
+import type { KakaoPlace, Place } from '@/types';
 import { canCreateRoom, getRoomCreationCooldownRemaining, setRoomCreatedAt, getParticipantId } from '@/lib/utils';
 
 // KakaoMap은 SSR 비활성화 (window.kakao 필요)
@@ -23,20 +25,6 @@ const KakaoMap = dynamic(() => import('@/components/KakaoMap'), {
     </div>
   )
 });
-
-interface Place {
-  placeId: string;
-  name: string;
-  address: string;
-  category: string;
-  categoryDetail?: string;
-  x?: string;
-  y?: string;
-}
-
-type District = '강남구' | '관악구' | '영등포구';
-
-const DISTRICTS: District[] = ['강남구', '관악구', '영등포구'];
 
 export default function HomePage() {
   const router = useRouter();
@@ -88,13 +76,12 @@ export default function HomePage() {
     }
 
     // 지원 지역 확인 (주소에 3개구 포함 여부)
-    const supportedDistricts = ['관악구', '영등포구', '강남구'];
-    const isSupported = supportedDistricts.some(district =>
+    const isSupported = CONFIG.SUPPORTED_DISTRICTS.some(district =>
       kakaoPlace.address.includes(district)
     );
 
     if (!isSupported) {
-      showToast('현재 관악구, 영등포구, 강남구만 지원합니다');
+      showToast(`현재 ${CONFIG.SUPPORTED_DISTRICTS.join(', ')}만 지원합니다`);
       return;
     }
 
@@ -173,7 +160,7 @@ export default function HomePage() {
       } else {
         showToast(result.error?.message || '투표방 생성에 실패했습니다');
       }
-    } catch (error) {
+    } catch {
       showToast('오류가 발생했습니다');
     } finally {
       setLoading(false);
@@ -209,7 +196,7 @@ export default function HomePage() {
           </div>
 
           <button
-            onClick={() => router.push(`/room/${createdRoomId}`)}
+            onClick={() => router.push(ROUTES.ROOM(createdRoomId))}
             className="w-full mt-4 py-3 btn-secondary animate-slide-up"
             style={{ animationDelay: '0.3s' }}
           >
@@ -257,7 +244,7 @@ export default function HomePage() {
 
           {/* 지역 필터 */}
           <div className="flex gap-2 mb-3">
-            {DISTRICTS.map((district) => (
+            {CONFIG.SUPPORTED_DISTRICTS.map((district) => (
               <button
                 key={district}
                 onClick={() => setSelectedDistrict(district)}
@@ -397,7 +384,7 @@ export default function HomePage() {
               className="w-5 h-5 rounded border-gray-300 text-indigo-500 focus:ring-indigo-500"
             />
             <div>
-              <span className="font-medium text-gray-900 text-sm">"상관없음" 옵션 허용</span>
+              <span className="font-medium text-gray-900 text-sm">&quot;상관없음&quot; 옵션 허용</span>
               <p className="text-xs text-gray-500">투표자가 패스할 수 있어요</p>
             </div>
           </label>

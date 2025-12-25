@@ -498,3 +498,206 @@ input[type="datetime-local"]::-webkit-datetime-edit-ampm-field {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* ========================================
+   컴포넌트 유틸리티 클래스 (Hybrid)
+======================================== */
+
+/* 공유 버튼 */
+.share-btn {
+  @apply flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-colors;
+}
+
+.share-btn-secondary {
+  @apply flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-colors bg-gray-100;
+}
+
+.share-btn-secondary:hover {
+  @apply bg-gray-200;
+}
+
+.share-btn-primary {
+  @apply flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-colors bg-indigo-500 text-white;
+}
+
+.share-btn-primary:hover {
+  @apply bg-indigo-600;
+}
+
+/* 아이콘 */
+.icon-sm {
+  @apply w-4 h-4;
+}
+
+.icon-md {
+  @apply w-5 h-5;
+}
+
+/* 텍스트 */
+.text-caption {
+  @apply text-xs text-gray-500;
+}
+
+.text-muted {
+  @apply text-gray-400;
+}
+
+/* 뱃지 */
+.badge-primary {
+  @apply inline-block px-3 py-1 text-xs font-medium rounded-full text-indigo-600 bg-indigo-50;
+}
+
+/* 주차 뱃지 - @apply + 일반 CSS 혼합 */
+.parking-badge-success {
+  @apply flex items-center text-xs px-2.5 py-1 rounded-lg border font-medium cursor-help bg-green-50 border-green-200 text-green-700;
+  gap: 0.375rem;
+}
+
+.parking-badge-warning {
+  @apply flex items-center text-xs px-2.5 py-1 rounded-lg border font-medium cursor-help bg-yellow-50 border-yellow-200 text-yellow-700;
+  gap: 0.375rem;
+}
+
+.parking-badge-danger {
+  @apply flex items-center text-xs px-2.5 py-1 rounded-lg border font-medium cursor-help bg-red-50 border-red-200 text-red-700;
+  gap: 0.375rem;
+}
+
+/* 폼 옵션 버튼 */
+.form-option-btn {
+  @apply p-4 text-left rounded-xl border-2 border-gray-200 transition-all;
+}
+
+.form-option-btn:disabled {
+  @apply opacity-50;
+}
+
+.form-option-btn:hover:not(:disabled) {
+  @apply border-gray-400;
+}
+
+.form-option-btn-blue:hover:not(:disabled) {
+  @apply border-blue-500 bg-blue-50;
+}
+
+.form-option-btn-green:hover:not(:disabled) {
+  @apply border-green-500 bg-green-50;
+}
+
+.form-option-btn-yellow:hover:not(:disabled) {
+  @apply border-yellow-500 bg-yellow-50;
+}
+
+.form-option-btn-orange:hover:not(:disabled) {
+  @apply border-orange-500 bg-orange-50;
+}
+
+.form-option-btn-red:hover:not(:disabled) {
+  @apply border-red-500 bg-red-50;
+}
+
+/* 헤더 */
+.header {
+  @apply sticky top-0 bg-white border-b border-gray-100;
+  z-index: 100;
+}
+
+.header-container {
+  @apply max-w-lg mx-auto px-4 py-4 flex items-center justify-between;
+}
+
+.header-link {
+  @apply flex items-center gap-2;
+}
+
+.header-action {
+  @apply text-sm text-gray-500 flex items-center gap-1 transition-colors;
+}
+
+.header-action:hover {
+  @apply text-indigo-600;
+}
+
+/* 페이지 컨테이너 */
+.page-container {
+  @apply max-w-lg mx-auto px-4 py-8;
+}
+
+/* 로딩 스피너 */
+.spinner {
+  @apply w-16 h-16 border-4 border-indigo-100 rounded-full;
+}
+
+.spinner-active {
+  @apply absolute top-0 left-0 w-16 h-16 border-4 border-indigo-500 rounded-full border-t-transparent;
+  animation: spin 1s linear infinite;
+}
+
+/* 툴팁 */
+.tooltip {
+  @apply absolute left-1/2 bottom-full mb-2 pointer-events-none;
+  transform: translateX(-50%);
+  z-index: 50;
+}
+
+.tooltip-content {
+  @apply bg-gray-800 text-white rounded shadow-lg p-2 text-center;
+  font-size: 10px;
+}
+
+.tooltip-arrow {
+  @apply absolute left-1/2 border-4 border-transparent;
+  top: 100%;
+  transform: translateX(-50%);
+  border-top-color: #1f2937;
+}
+
+/* 선택 인디케이터 - 커스텀 애니메이션은 직접 참조 */
+.selection-indicator {
+  @apply absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center shadow-lg;
+  background: linear-gradient(to bottom right, #6366f1, #a855f7);
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+/* 진행 바 */
+.progress-bar {
+  @apply flex-1 h-3 bg-gray-100 rounded-full overflow-hidden;
+}
+
+.progress-fill {
+  @apply h-full rounded-full;
+  background: linear-gradient(to right, #6366f1, #a855f7);
+  transition: width 0.5s ease-out;
+}
+
+/* 빈 상태 */
+.empty-state {
+  @apply mt-2 border border-gray-100 rounded-xl p-3 text-center;
+  background-color: rgba(249, 250, 251, 0.5);
+}
+
+/* 플렉스 유틸리티 */
+.flex-center {
+  @apply flex items-center justify-center;
+}
+
+.flex-between {
+  @apply flex items-center justify-between;
+}
+
+/* 갭 유틸리티 */
+.gap-xs {
+  @apply gap-1;
+}
+
+.gap-sm {
+  @apply gap-2;
+}
+
+.gap-md {
+  @apply gap-3;
+}
+
+.gap-lg {
+  @apply gap-4;
+}

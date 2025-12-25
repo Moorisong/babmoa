@@ -1,13 +1,20 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+import { API } from '@/constants';
+import type {
+    ApiResponse,
+    KakaoPlace,
+    ParkingInfo,
+    ParkingStats,
+    PlaceSearchOptions,
+    PlaceSearchMeta,
+    DistrictPlacesMeta,
+    Room,
+    VoteResult,
+} from '@/types';
 
-interface ApiResponse<T> {
-    success: boolean;
-    data?: T;
-    error?: {
-        code: string;
-        message: string;
-    };
-}
+// 타입 re-export (하위 호환성)
+export type { ParkingInfo, KakaoPlace, PlaceSearchOptions };
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
@@ -19,8 +26,7 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
             },
         });
         return await response.json();
-    } catch (error) {
-        console.error('API Error:', error);
+    } catch {
         return {
             success: false,
             error: { code: 'NETWORK_ERROR', message: '네트워크 오류가 발생했습니다' },
@@ -35,31 +41,20 @@ export const roomsApi = {
         places: Array<{ placeId: string; name: string; address: string; category: string; categoryDetail?: string }>;
         options: { allowPass: boolean; deadline: string };
         participantId: string;
-    }) => fetchApi<{ roomId: string }>('/rooms', {
+    }) => fetchApi<{ roomId: string }>(API.ROOMS, {
         method: 'POST',
         body: JSON.stringify(data),
     }),
 
-    get: (roomId: string) => fetchApi<{
-        roomId: string;
-        title: string;
-        places: Array<{ placeId: string; name: string; address: string; category: string; categoryDetail?: string }>;
-        options: { allowPass: boolean; deadline: string };
-        result: { winnerPlaceId: string | null; decidedAt: string | null };
-        isClosed: boolean;
-        createdAt: string;
-    }>(`/rooms/${roomId}`),
+    get: (roomId: string) => fetchApi<Room>(API.ROOM(roomId)),
 
     vote: (roomId: string, data: { placeId: string | null; participantId: string }) =>
-        fetchApi<{ recorded: boolean }>(`/rooms/${roomId}/vote`, {
+        fetchApi<{ recorded: boolean }>(API.ROOM_VOTE(roomId), {
             method: 'POST',
             body: JSON.stringify(data),
         }),
 
-    getResults: (roomId: string) => fetchApi<{
-        winnerPlaceId: string | null;
-        votes: Array<{ placeId: string | null; count: number }>;
-    }>(`/rooms/${roomId}/results`),
+    getResults: (roomId: string) => fetchApi<VoteResult>(API.ROOM_RESULTS(roomId)),
 };
 
 // 주차 데이터 API
@@ -72,50 +67,15 @@ export const parkingApi = {
         parkingExperience: string | null;
         date: string;
         timeSlot: string;
-    }) => fetchApi<{ recorded: boolean }>('/parking', {
+    }) => fetchApi<{ recorded: boolean }>(API.PARKING, {
         method: 'POST',
         body: JSON.stringify(data),
     }),
 
-    getStats: (placeId: string) => fetchApi<{
-        placeId: string;
-        totalAttempts: number;
-        successRate: number;
-        byTimeSlot: Record<string, { attempts: number; successRate: number }>;
-    }>(`/parking/${placeId}/stats`),
+    getStats: (placeId: string) => fetchApi<ParkingStats>(API.PARKING_STATS(placeId)),
 };
 
 // 장소 검색 API (카카오맵)
-export interface ParkingInfo {
-    parkingAvailable: boolean | null;
-    successRate: number | null;
-    recordCount: number;
-    timeSlot: '평일_점심' | '평일_저녁' | '주말';
-    hasEnoughData: boolean;
-}
-
-export interface KakaoPlace {
-    placeId: string;
-    name: string;
-    address: string;
-    category: string;
-    categoryDetail?: string;
-    phone: string;
-    x: string;
-    y: string;
-    parkingInfo?: ParkingInfo | null;
-}
-
-export interface PlaceSearchOptions {
-    x?: string;
-    y?: string;
-    radius?: number;
-    page?: number;
-    size?: number;
-    category?: string;
-    shuffle?: boolean;
-}
-
 export const placesApi = {
     search: (keyword: string, options?: PlaceSearchOptions) => {
         const params = new URLSearchParams();
@@ -130,14 +90,14 @@ export const placesApi = {
 
         return fetchApi<{
             places: KakaoPlace[];
-            meta: { totalCount: number; isEnd: boolean; currentPage: number; currentTimeSlot?: string };
-        }>(`/places/search?${params.toString()}`);
+            meta: PlaceSearchMeta;
+        }>(`${API.PLACES_SEARCH}?${params.toString()}`);
     },
 
-    getCategories: () => fetchApi<{ categories: string[] }>('/places/categories'),
+    getCategories: () => fetchApi<{ categories: string[] }>(API.PLACES_CATEGORIES),
 
     getByDistrict: (district: string) => fetchApi<{
         places: KakaoPlace[];
-        meta: { totalCount: number; district: string; currentTimeSlot?: string };
-    }>(`/places/district/${encodeURIComponent(district)}`),
+        meta: DistrictPlacesMeta;
+    }>(API.PLACES_DISTRICT(district)),
 };

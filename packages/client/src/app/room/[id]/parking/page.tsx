@@ -3,18 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Header, ParkingForm } from '@/components';
+import { ROUTES } from '@/constants';
 import { roomsApi, parkingApi } from '@/lib/api';
+import type { Room, TimeSlot } from '@/types';
 import { getParticipantId, hasRecordedParking, setRecordedParking, getTimeSlotFromDeadline } from '@/lib/utils';
-
-interface Room {
-    roomId: string;
-    title: string;
-    options: { allowPass: boolean; deadline: string };
-    result: { winnerPlaceId: string | null; decidedAt: string | null };
-    places: Array<{ placeId: string; name: string; address: string; category: string }>;
-}
-
-type TimeSlot = '평일_점심' | '평일_저녁' | '주말';
 
 const TIME_SLOT_OPTIONS: { value: TimeSlot; label: string; emoji: string }[] = [
     { value: '평일_점심', label: '점심', emoji: '🌤️' },
@@ -50,7 +42,7 @@ export default function ParkingPage() {
 
             // 마감 전이면 투표 페이지로
             if (new Date() < new Date(result.data.options.deadline)) {
-                router.replace(`/room/${roomId}`);
+                router.replace(ROUTES.ROOM(roomId));
             }
         } else {
             setError(result.error?.message || '투표방을 찾을 수 없습니다');
@@ -82,7 +74,7 @@ export default function ParkingPage() {
             } else {
                 alert(result.error?.message || '기록에 실패했습니다');
             }
-        } catch (error) {
+        } catch {
             alert('오류가 발생했습니다');
         } finally {
             setSubmitting(false);
@@ -136,7 +128,7 @@ export default function ParkingPage() {
                             다음에 이 장소를 검색하면 주차 성공률이 표시됩니다
                         </p>
                         <button
-                            onClick={() => router.push(`/room/${roomId}/result`)}
+                            onClick={() => router.push(ROUTES.ROOM_RESULT(roomId))}
                             className="btn-primary px-8"
                         >
                             결과 페이지로 돌아가기
@@ -172,8 +164,8 @@ export default function ParkingPage() {
                                 key={option.value}
                                 onClick={() => setSelectedTimeSlot(option.value)}
                                 className={`flex-1 py-3 rounded-xl font-medium transition-all ${selectedTimeSlot === option.value
-                                        ? 'bg-indigo-500 text-white shadow-md'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-indigo-500 text-white shadow-md'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                             >
                                 <span className="text-lg">{option.emoji}</span>
@@ -190,7 +182,7 @@ export default function ParkingPage() {
 
                 {/* 돌아가기 */}
                 <button
-                    onClick={() => router.push(`/room/${roomId}/result`)}
+                    onClick={() => router.push(ROUTES.ROOM_RESULT(roomId))}
                     className="w-full mt-4 py-3 text-gray-600 font-medium hover:bg-gray-50 rounded-xl transition-colors"
                 >
                     나중에 할게요

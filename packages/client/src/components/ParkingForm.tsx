@@ -14,19 +14,16 @@ interface ParkingFormProps {
 
 export default function ParkingForm({ onSubmit, loading = false }: ParkingFormProps) {
     const [step, setStep] = useState<ParkingStep>('available');
-    const [parkingAvailable, setParkingAvailable] = useState<boolean | null>(null);
+    const [, setParkingAvailable] = useState<boolean | null>(null);
 
     const handleAvailableSelect = (available: boolean | null) => {
         setParkingAvailable(available);
 
         if (available === false) {
-            // 주차장 없음 → 바로 제출
             onSubmit({ parkingAvailable: false, parkingExperience: null });
         } else if (available === null) {
-            // 잘 모름 → unknown 처리
             onSubmit({ parkingAvailable: false, parkingExperience: null });
         } else {
-            // 주차장 있음 → 다음 질문
             setStep('experience');
         }
     };
@@ -35,16 +32,15 @@ export default function ParkingForm({ onSubmit, loading = false }: ParkingFormPr
         onSubmit({ parkingAvailable: true, parkingExperience: experience });
     };
 
-    // 로딩 중일 때 로딩 UI 표시
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
+            <div className="flex-center flex-col py-12 animate-fade-in">
                 <div className="relative mb-6">
-                    <div className="w-16 h-16 border-4 border-indigo-100 rounded-full"></div>
-                    <div className="absolute top-0 left-0 w-16 h-16 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
+                    <div className="spinner"></div>
+                    <div className="spinner-active"></div>
                 </div>
                 <p className="text-lg font-semibold text-gray-900 mb-2">기록 중...</p>
-                <p className="text-sm text-gray-500">잠시만 기다려주세요</p>
+                <p className="text-caption">잠시만 기다려주세요</p>
             </div>
         );
     }
@@ -56,11 +52,11 @@ export default function ParkingForm({ onSubmit, loading = false }: ParkingFormPr
                     <h3 className="text-xl font-bold text-gray-900 text-center">
                         주차장이 있었나요?
                     </h3>
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-1 gap-md">
                         <button
                             onClick={() => handleAvailableSelect(true)}
                             disabled={loading}
-                            className="p-4 text-left rounded-xl border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50"
+                            className="form-option-btn form-option-btn-blue"
                         >
                             <span className="text-2xl mb-2 block">🅿️</span>
                             <span className="font-medium">있었어요</span>
@@ -68,7 +64,7 @@ export default function ParkingForm({ onSubmit, loading = false }: ParkingFormPr
                         <button
                             onClick={() => handleAvailableSelect(false)}
                             disabled={loading}
-                            className="p-4 text-left rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition-all disabled:opacity-50"
+                            className="form-option-btn form-option-btn-orange"
                         >
                             <span className="text-2xl mb-2 block">❌</span>
                             <span className="font-medium">없었어요</span>
@@ -76,10 +72,10 @@ export default function ParkingForm({ onSubmit, loading = false }: ParkingFormPr
                         <button
                             onClick={() => handleAvailableSelect(null)}
                             disabled={loading}
-                            className="p-4 text-left rounded-xl border-2 border-gray-200 hover:border-gray-400 transition-all disabled:opacity-50"
+                            className="form-option-btn"
                         >
                             <span className="text-2xl mb-2 block">🤔</span>
-                            <span className="font-medium text-gray-500">잘 모르겠어요</span>
+                            <span className="font-medium text-muted">잘 모르겠어요</span>
                         </button>
                     </div>
                 </>
@@ -90,11 +86,11 @@ export default function ParkingForm({ onSubmit, loading = false }: ParkingFormPr
                     <h3 className="text-xl font-bold text-gray-900 text-center">
                         주차는 어땠나요?
                     </h3>
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-1 gap-md">
                         <button
                             onClick={() => handleExperienceSelect('문제없음')}
                             disabled={loading}
-                            className="p-4 text-left rounded-xl border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all disabled:opacity-50"
+                            className="form-option-btn form-option-btn-green"
                         >
                             <span className="text-2xl mb-2 block">😊</span>
                             <span className="font-medium">문제없었어요</span>
@@ -102,7 +98,7 @@ export default function ParkingForm({ onSubmit, loading = false }: ParkingFormPr
                         <button
                             onClick={() => handleExperienceSelect('조금불편')}
                             disabled={loading}
-                            className="p-4 text-left rounded-xl border-2 border-gray-200 hover:border-yellow-500 hover:bg-yellow-50 transition-all disabled:opacity-50"
+                            className="form-option-btn form-option-btn-yellow"
                         >
                             <span className="text-2xl mb-2 block">😐</span>
                             <span className="font-medium">조금 불편했어요</span>
@@ -110,7 +106,7 @@ export default function ParkingForm({ onSubmit, loading = false }: ParkingFormPr
                         <button
                             onClick={() => handleExperienceSelect('못함')}
                             disabled={loading}
-                            className="p-4 text-left rounded-xl border-2 border-gray-200 hover:border-red-500 hover:bg-red-50 transition-all disabled:opacity-50"
+                            className="form-option-btn form-option-btn-red"
                         >
                             <span className="text-2xl mb-2 block">😢</span>
                             <span className="font-medium">못 했어요</span>
@@ -118,10 +114,10 @@ export default function ParkingForm({ onSubmit, loading = false }: ParkingFormPr
                         <button
                             onClick={() => handleExperienceSelect('모름')}
                             disabled={loading}
-                            className="p-4 text-left rounded-xl border-2 border-gray-200 hover:border-gray-400 transition-all disabled:opacity-50"
+                            className="form-option-btn"
                         >
                             <span className="text-2xl mb-2 block">🤔</span>
-                            <span className="font-medium text-gray-500">잘 모르겠어요</span>
+                            <span className="font-medium text-muted">잘 모르겠어요</span>
                         </button>
                     </div>
                 </>

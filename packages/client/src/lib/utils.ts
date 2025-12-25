@@ -1,13 +1,15 @@
-// 브라우저 UUID 생성 및 저장
-// participantId는 영구 보관 (TTL 없음)
-const PARTICIPANT_ID_KEY = 'babmoa_participant_id';
+import { STORAGE_KEYS, CONFIG } from '@/constants';
+import type { TimeSlot } from '@/types';
+
+// ========================================
+// 참여자 ID 관리 (영구 보관)
+// ========================================
 
 export function getParticipantId(): string {
     if (typeof window === 'undefined') {
         return '';
     }
 
-    // 영구 저장된 participantId 조회
     let participantId = getParticipantIdFromStorage();
 
     if (!participantId) {
@@ -18,26 +20,26 @@ export function getParticipantId(): string {
     return participantId;
 }
 
-// participantId 영구 저장 (TTL 없음)
 function setParticipantIdToStorage(value: string): void {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(PARTICIPANT_ID_KEY, value);
+    localStorage.setItem(STORAGE_KEYS.PARTICIPANT_ID, value);
 }
 
-// participantId 조회 (영구 저장 - TTL 체크 없음)
 function getParticipantIdFromStorage(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(PARTICIPANT_ID_KEY);
+    return localStorage.getItem(STORAGE_KEYS.PARTICIPANT_ID);
 }
 
-const STORAGE_EXPIRY_DAYS = 14;
+// ========================================
+// 만료 기반 스토리지 유틸리티
+// ========================================
 
 interface StoredData {
     value: string;
     timestamp: number;
 }
 
-function setItemWithExpiry(key: string, value: string) {
+function setItemWithExpiry(key: string, value: string): void {
     if (typeof window === 'undefined') return;
     const data: StoredData = {
         value,
@@ -58,7 +60,7 @@ function getItemWithExpiry(key: string): string | null {
 
         // 만료 체크
         const now = new Date().getTime();
-        const expiryTime = STORAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+        const expiryTime = CONFIG.STORAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
 
         if (now - item.timestamp > expiryTime) {
             localStorage.removeItem(key);
@@ -71,13 +73,19 @@ function getItemWithExpiry(key: string): string | null {
     }
 }
 
-// 오래된 데이터 정리 (앱 진입 시 실행 권장)
-// 주의: participantId는 영구 보관이므로 정리 대상에서 제외
-export function cleanOldStorage() {
+// ========================================
+// 스토리지 정리
+// ========================================
+
+/**
+ * 오래된 데이터 정리 (앱 진입 시 실행 권장)
+ * 주의: participantId는 영구 보관이므로 정리 대상에서 제외
+ */
+export function cleanOldStorage(): void {
     if (typeof window === 'undefined') return;
 
     const now = new Date().getTime();
-    const expiryTime = STORAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+    const expiryTime = CONFIG.STORAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
 
     Object.keys(localStorage).forEach(key => {
         // voted_, parking_ 프리픽스만 정리 (participantId는 영구 보관)
@@ -89,37 +97,41 @@ export function cleanOldStorage() {
                 const item = JSON.parse(itemStr);
                 if (item && item.timestamp && (now - item.timestamp > expiryTime)) {
                     localStorage.removeItem(key);
-                    console.log(`Cleaned up expired storage: ${key}`);
                 }
             } catch {
-                // 예전 데이터 형식이면 무시하거나 삭제 정책 결정 가능
-                // 현재는 유지
+                // 예전 데이터 형식이면 무시
             }
         }
     });
 }
 
+// ========================================
 // 투표 여부 확인
+// ========================================
+
 export function hasVoted(roomId: string): boolean {
-    return getItemWithExpiry(`voted_${roomId}`) === 'true';
+    return getItemWithExpiry(STORAGE_KEYS.VOTED(roomId)) === 'true';
 }
 
 export function setVoted(roomId: string): void {
-    setItemWithExpiry(`voted_${roomId}`, 'true');
+    setItemWithExpiry(STORAGE_KEYS.VOTED(roomId), 'true');
 }
 
+// ========================================
 // 주차 기록 여부 확인
+// ========================================
+
 export function hasRecordedParking(roomId: string): boolean {
-    return getItemWithExpiry(`parking_${roomId}`) === 'true';
+    return getItemWithExpiry(STORAGE_KEYS.PARKING(roomId)) === 'true';
 }
 
 export function setRecordedParking(roomId: string): void {
-    setItemWithExpiry(`parking_${roomId}`, 'true');
+    setItemWithExpiry(STORAGE_KEYS.PARKING(roomId), 'true');
 }
 
+// ========================================
 // 투표방 생성 제한 (1분 간격)
-const LAST_CREATED_ROOM_KEY = 'lastCreatedRoomAt';
-const ROOM_CREATION_COOLDOWN_MS = 60 * 1000; // 1분
+// ========================================
 
 /**
  * 투표방 생성 가능 여부 확인
@@ -128,11 +140,11 @@ const ROOM_CREATION_COOLDOWN_MS = 60 * 1000; // 1분
 export function canCreateRoom(): boolean {
     if (typeof window === 'undefined') return true;
 
-    const lastCreatedAt = localStorage.getItem(LAST_CREATED_ROOM_KEY);
+    const lastCreatedAt = localStorage.getItem(STORAGE_KEYS.LAST_CREATED_ROOM_AT);
     if (!lastCreatedAt) return true;
 
     const elapsed = Date.now() - parseInt(lastCreatedAt, 10);
-    return elapsed >= ROOM_CREATION_COOLDOWN_MS;
+    return elapsed >= CONFIG.ROOM_CREATION_COOLDOWN_MS;
 }
 
 /**
@@ -142,11 +154,11 @@ export function canCreateRoom(): boolean {
 export function getRoomCreationCooldownRemaining(): number {
     if (typeof window === 'undefined') return 0;
 
-    const lastCreatedAt = localStorage.getItem(LAST_CREATED_ROOM_KEY);
+    const lastCreatedAt = localStorage.getItem(STORAGE_KEYS.LAST_CREATED_ROOM_AT);
     if (!lastCreatedAt) return 0;
 
     const elapsed = Date.now() - parseInt(lastCreatedAt, 10);
-    const remaining = ROOM_CREATION_COOLDOWN_MS - elapsed;
+    const remaining = CONFIG.ROOM_CREATION_COOLDOWN_MS - elapsed;
 
     return remaining > 0 ? Math.ceil(remaining / 1000) : 0;
 }
@@ -156,11 +168,17 @@ export function getRoomCreationCooldownRemaining(): number {
  */
 export function setRoomCreatedAt(): void {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(LAST_CREATED_ROOM_KEY, Date.now().toString());
+    localStorage.setItem(STORAGE_KEYS.LAST_CREATED_ROOM_AT, Date.now().toString());
 }
 
-// 시간대 계산 (현재 시간 기준)
-export function getTimeSlot(): '평일_점심' | '평일_저녁' | '주말' {
+// ========================================
+// 시간대 계산
+// ========================================
+
+/**
+ * 시간대 계산 (현재 시간 기준)
+ */
+export function getTimeSlot(): TimeSlot {
     const now = new Date();
     const day = now.getDay();
     const hour = now.getHours();
@@ -179,8 +197,10 @@ export function getTimeSlot(): '평일_점심' | '평일_저녁' | '주말' {
     return '평일_점심';
 }
 
-// 시간대 계산 (투표 마감 시간 기준) - 더 정확한 기본값
-export function getTimeSlotFromDeadline(deadline: string): '평일_점심' | '평일_저녁' | '주말' {
+/**
+ * 시간대 계산 (투표 마감 시간 기준) - 더 정확한 기본값
+ */
+export function getTimeSlotFromDeadline(deadline: string): TimeSlot {
     const deadlineDate = new Date(deadline);
     const day = deadlineDate.getDay();
     const hour = deadlineDate.getHours();
@@ -199,7 +219,10 @@ export function getTimeSlotFromDeadline(deadline: string): '평일_점심' | '�
     return '평일_점심';
 }
 
+// ========================================
 // 날짜 포맷
+// ========================================
+
 export function formatDate(date: Date | string): string {
     const d = new Date(date);
     return d.toLocaleDateString('ko-KR', {
@@ -209,7 +232,9 @@ export function formatDate(date: Date | string): string {
     });
 }
 
-// 마감 시간까지 남은 시간
+/**
+ * 마감 시간까지 남은 시간
+ */
 export function getTimeRemaining(deadline: string): string {
     const now = new Date();
     const end = new Date(deadline);
