@@ -477,6 +477,190 @@ import { cn } from '@/lib/utils';
 
 ---
 
+## 10.1 CSS Modules 규칙
+
+> **컴포넌트별 스타일 분리 필수** - 스타일 충돌 방지, 유지보수성 향상
+
+### 기본 원칙
+
+| 항목 | 규칙 |
+|------|------|
+| 파일 위치 | 컴포넌트와 동일 디렉토리 내 |
+| 네이밍 | `ComponentName.module.css` |
+| 클래스 네이밍 | `camelCase` |
+| 조건부 스타일 | `classnames` 라이브러리 사용 |
+| 인라인 스타일 | 동적 값(애니메이션 딜레이 등)만 허용 |
+
+### 디렉토리 구조
+
+```
+components/
+├─ Header/
+│   ├─ index.tsx            # 컴포넌트 코드 (default export)
+│   └─ Header.module.css    # 스타일
+├─ VoteCard/
+│   ├─ index.tsx
+│   └─ VoteCard.module.css
+└─ index.ts                 # 전체 컴포넌트 re-export
+```
+
+### 컴포넌트 파일 작성 규칙
+
+```tsx
+// components/Header/index.tsx
+'use client';
+
+import classNames from 'classnames';
+import styles from './Header.module.css';
+
+export default function Header() {
+  return (
+    <header className={styles.header}>
+      {/* ... */}
+    </header>
+  );
+}
+```
+
+### 메인 index.ts 작성 규칙
+
+```typescript
+// components/index.ts (전체 export)
+export { default as Header } from './Header';
+export { default as VoteCard } from './VoteCard';
+export { default as Footer } from './Footer';
+```
+
+### CSS Module 사용 예시
+
+```tsx
+// ✅ 올바른 사용
+import classNames from 'classnames';
+import styles from './Button.module.css';
+
+export function Button({ variant, disabled }: Props) {
+  return (
+    <button
+      className={classNames(styles.button, {
+        [styles.primary]: variant === 'primary',
+        [styles.secondary]: variant === 'secondary',
+        [styles.disabled]: disabled,
+      })}
+    >
+      Click me
+    </button>
+  );
+}
+```
+
+```css
+/* Button.module.css */
+.button {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.primary {
+  background-color: #6366f1;
+  color: white;
+}
+
+.secondary {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+```
+
+### Import 순서 (스타일)
+
+```typescript
+// 1. React/Next.js 코어
+import { useState } from 'react';
+
+// 2. 외부 라이브러리
+import classNames from 'classnames';
+
+// 3. 내부 모듈 (컴포넌트, 훅, 유틸)
+import { formatDate } from '@/lib/utils';
+
+// 4. 타입
+import type { ButtonProps } from '@/types';
+
+// 5. 스타일 (마지막)
+import styles from './Button.module.css';
+```
+
+### 클래스 네이밍 컨벤션
+
+| 용도 | 네이밍 패턴 | 예시 |
+|------|------------|------|
+| 컨테이너 | `container`, `wrapper` | `.container`, `.cardWrapper` |
+| 상태 | 형용사 | `.active`, `.disabled`, `.selected` |
+| 변형 | 명사/형용사 | `.primary`, `.large`, `.outlined` |
+| 레이아웃 | 위치/역할 | `.header`, `.content`, `.footer` |
+| 요소 부분 | 부모_자식 | `.card`, `.cardTitle`, `.cardContent` |
+
+### 조건부 클래스 패턴
+
+```tsx
+// ✅ classnames 사용
+<div className={classNames(styles.card, {
+  [styles.selected]: isSelected,
+  [styles.disabled]: isDisabled,
+})}>
+
+// ✅ 다중 기본 클래스
+<button className={classNames(
+  styles.btn,
+  styles.btnPrimary,
+  isLoading && styles.loading
+)}>
+
+// ❌ 피해야 할 패턴 (템플릿 리터럴)
+<div className={`${styles.card} ${isSelected ? styles.selected : ''}`}>
+```
+
+### 동적 스타일 처리
+
+```tsx
+// ✅ 애니메이션 딜레이 등 동적 값은 style prop 사용
+<div 
+  className={styles.card}
+  style={{ animationDelay: `${index * 0.1}s` }}
+>
+
+// ✅ CSS 변수 활용
+<div 
+  className={styles.progress}
+  style={{ '--progress': `${percentage}%` } as React.CSSProperties}
+>
+```
+
+```css
+/* progress bar에서 CSS 변수 사용 */
+.progress::after {
+  width: var(--progress);
+}
+```
+
+### 금지 사항
+
+| 금지 | 이유 |
+|------|------|
+| 인라인 Tailwind 클래스 | CSS Modules로 통일 |
+| globals.css에 컴포넌트 스타일 | 컴포넌트별 모듈로 분리 |
+| `!important` 남용 | 스타일 우선순위 혼란 |
+| 깊은 셀렉터 (`>`, 후손 셀렉터) | 결합도 증가 |
+
+---
+
 ## 11. 시맨틱 HTML (Semantic HTML)
 
 > **의미 있는 HTML 태그 사용 필수** - SEO, 접근성, 유지보수성 향상
