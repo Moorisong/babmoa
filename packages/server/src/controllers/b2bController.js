@@ -1,4 +1,5 @@
 const { ParkingStats } = require('../models');
+const { ERROR_CODES } = require('../constants');
 
 // GET /api/b2b/parking/:placeId - 특정 장소 집계 데이터
 exports.getPlaceStats = async (req, res) => {
@@ -49,7 +50,7 @@ exports.getPlaceStats = async (req, res) => {
         console.error('getPlaceStats error:', error);
         res.status(500).json({
             success: false,
-            error: { code: 'SERVER_ERROR', message: '서버 오류가 발생했습니다' }
+            error: { code: ERROR_CODES.SERVER_ERROR, message: '서버 오류가 발생했습니다' }
         });
     }
 };
@@ -62,7 +63,7 @@ exports.getBulkStats = async (req, res) => {
         if (!placeIds) {
             return res.status(400).json({
                 success: false,
-                error: { code: 'INVALID_REQUEST', message: 'placeIds 쿼리 파라미터가 필요합니다' }
+                error: { code: ERROR_CODES.INVALID_REQUEST, message: 'placeIds 쿼리 파라미터가 필요합니다' }
             });
         }
 
@@ -111,7 +112,7 @@ exports.getBulkStats = async (req, res) => {
         console.error('getBulkStats error:', error);
         res.status(500).json({
             success: false,
-            error: { code: 'SERVER_ERROR', message: '서버 오류가 발생했습니다' }
+            error: { code: ERROR_CODES.SERVER_ERROR, message: '서버 오류가 발생했습니다' }
         });
     }
 };

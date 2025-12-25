@@ -1,18 +1,6 @@
 const { VoteRoom, Vote, IpRateLimit } = require('../models');
-
-// Rate Limiting 설정
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;       // 1분
-const RATE_LIMIT_PER_PARTICIPANT = 1;          // participantId당 1분에 1개
-const RATE_LIMIT_IP_ABUSE_THRESHOLD = 10;      // IP당 1분에 10개 초과 시 악용 의심
-
-// 클라이언트 IP 추출 (프록시/로드밸런서 고려)
-function getClientIp(req) {
-    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-        req.headers['x-real-ip'] ||
-        req.connection?.remoteAddress ||
-        req.ip ||
-        'unknown';
-}
+const { CONFIG, ERROR_CODES } = require('../constants');
+const { getClientIp, getCurrentTimeSlot } = require('../utils');
 
 // POST /api/rooms - 투표방 생성
 exports.createRoom = async (req, res) => {
@@ -24,11 +12,11 @@ exports.createRoom = async (req, res) => {
         if (!participantId) {
             return res.status(400).json({
                 success: false,
-                error: { code: 'INVALID_REQUEST', message: 'participantId는 필수입니다' }
+                error: { code: ERROR_CODES.INVALID_REQUEST, message: 'participantId는 필수입니다' }
             });
         }
 
-        const oneMinuteAgo = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
+        const oneMinuteAgo = new Date(Date.now() - CONFIG.RATE_LIMIT_WINDOW_MS);
 
         // 1단계: IP + participantId 조합 (1분에 1개)
         const participantCount = await IpRateLimit.countDocuments({
@@ -38,10 +26,10 @@ exports.createRoom = async (req, res) => {
             createdAt: { $gte: oneMinuteAgo }
         });
 
-        if (participantCount >= RATE_LIMIT_PER_PARTICIPANT) {
+        if (participantCount >= CONFIG.RATE_LIMIT_PER_PARTICIPANT) {
             return res.status(429).json({
                 success: false,
-                error: { code: 'RATE_LIMITED', message: '잠시 후 다시 시도해주세요 (1분에 1개 생성 가능)' }
+                error: { code: ERROR_CODES.RATE_LIMITED, message: '잠시 후 다시 시도해주세요 (1분에 1개 생성 가능)' }
             });
         }
 
@@ -52,10 +40,10 @@ exports.createRoom = async (req, res) => {
             createdAt: { $gte: oneMinuteAgo }
         });
 
-        if (ipCount >= RATE_LIMIT_IP_ABUSE_THRESHOLD) {
+        if (ipCount >= CONFIG.RATE_LIMIT_IP_ABUSE_THRESHOLD) {
             return res.status(429).json({
                 success: false,
-                error: { code: 'IP_BLOCKED', message: '과도한 요청이 감지되었습니다. 잠시 후 다시 시도해주세요' }
+                error: { code: ERROR_CODES.IP_BLOCKED, message: '과도한 요청이 감지되었습니다. 잠시 후 다시 시도해주세요' }
             });
         }
 
@@ -63,14 +51,14 @@ exports.createRoom = async (req, res) => {
         if (!title || !places || places.length === 0) {
             return res.status(400).json({
                 success: false,
-                error: { code: 'INVALID_REQUEST', message: '제목과 장소는 필수입니다' }
+                error: { code: ERROR_CODES.INVALID_REQUEST, message: '제목과 장소는 필수입니다' }
             });
         }
 
         if (!options?.deadline) {
             return res.status(400).json({
                 success: false,
-                error: { code: 'INVALID_REQUEST', message: '마감 시간은 필수입니다' }
+                error: { code: ERROR_CODES.INVALID_REQUEST, message: '마감 시간은 필수입니다' }
             });
         }
 
@@ -98,7 +86,7 @@ exports.createRoom = async (req, res) => {
         console.error('createRoom error:', error);
         res.status(500).json({
             success: false,
-            error: { code: 'SERVER_ERROR', message: '서버 오류가 발생했습니다' }
+            error: { code: ERROR_CODES.SERVER_ERROR, message: '서버 오류가 발생했습니다' }
         });
     }
 };
@@ -112,7 +100,7 @@ exports.getRoom = async (req, res) => {
         if (!room) {
             return res.status(404).json({
                 success: false,
-                error: { code: 'NOT_FOUND', message: '투표방을 찾을 수 없습니다' }
+                error: { code: ERROR_CODES.NOT_FOUND, message: '투표방을 찾을 수 없습니다' }
             });
         }
 
@@ -126,14 +114,7 @@ exports.getRoom = async (req, res) => {
         const placesWithParking = room.places.map(p => p.toObject ? p.toObject() : p);
         if (placesWithParking.length > 0) {
             const ParkingStats = require('../models/ParkingStats');
-
-            // 현재 시간대 계산
-            const now = new Date();
-            const day = now.getDay();
-            const hour = now.getHours();
-            let currentTimeSlot = '평일_점심';
-            if (day === 0 || day === 6) currentTimeSlot = '주말';
-            else if (hour >= 18) currentTimeSlot = '평일_저녁';
+            const currentTimeSlot = getCurrentTimeSlot();
 
             const placeIds = placesWithParking.map(p => p.placeId);
             const parkingStats = await ParkingStats.find({
@@ -143,7 +124,7 @@ exports.getRoom = async (req, res) => {
 
             const statsMap = new Map();
             parkingStats.forEach(stat => {
-                const hasEnoughData = stat.totalAttempts >= 3; // 최소 3건
+                const hasEnoughData = stat.totalAttempts >= CONFIG.MIN_PARKING_RECORDS;
                 statsMap.set(stat.placeId, {
                     parkingAvailable: stat.successCount > 0 ? true : (stat.failCount > 0 ? false : null),
                     successRate: hasEnoughData ? stat.successRate : null,
@@ -175,7 +156,7 @@ exports.getRoom = async (req, res) => {
         console.error('getRoom error:', error);
         res.status(500).json({
             success: false,
-            error: { code: 'SERVER_ERROR', message: '서버 오류가 발생했습니다' }
+            error: { code: ERROR_CODES.SERVER_ERROR, message: '서버 오류가 발생했습니다' }
         });
     }
 };
@@ -190,7 +171,7 @@ exports.vote = async (req, res) => {
         if (!participantId) {
             return res.status(400).json({
                 success: false,
-                error: { code: 'INVALID_REQUEST', message: 'participantId는 필수입니다' }
+                error: { code: ERROR_CODES.INVALID_REQUEST, message: 'participantId는 필수입니다' }
             });
         }
 
@@ -199,7 +180,7 @@ exports.vote = async (req, res) => {
         if (!room) {
             return res.status(404).json({
                 success: false,
-                error: { code: 'NOT_FOUND', message: '투표방을 찾을 수 없습니다' }
+                error: { code: ERROR_CODES.NOT_FOUND, message: '투표방을 찾을 수 없습니다' }
             });
         }
 
@@ -208,7 +189,7 @@ exports.vote = async (req, res) => {
             await room.checkAndClose();
             return res.status(400).json({
                 success: false,
-                error: { code: 'VOTE_CLOSED', message: '투표가 마감되었습니다' }
+                error: { code: ERROR_CODES.VOTE_CLOSED, message: '투표가 마감되었습니다' }
             });
         }
 
@@ -216,12 +197,12 @@ exports.vote = async (req, res) => {
         if (placeId === null && !room.options.allowPass) {
             return res.status(400).json({
                 success: false,
-                error: { code: 'PASS_NOT_ALLOWED', message: '패스가 허용되지 않습니다' }
+                error: { code: ERROR_CODES.PASS_NOT_ALLOWED, message: '패스가 허용되지 않습니다' }
             });
         }
 
         // 중복 투표 체크 및 저장 (upsert)
-        const vote = await Vote.findOneAndUpdate(
+        await Vote.findOneAndUpdate(
             { roomId: id, participantId },
             { roomId: id, placeId, participantId },
             { upsert: true, new: true }
@@ -235,7 +216,7 @@ exports.vote = async (req, res) => {
         console.error('vote error:', error);
         res.status(500).json({
             success: false,
-            error: { code: 'SERVER_ERROR', message: '서버 오류가 발생했습니다' }
+            error: { code: ERROR_CODES.SERVER_ERROR, message: '서버 오류가 발생했습니다' }
         });
     }
 };
@@ -250,7 +231,7 @@ exports.getResults = async (req, res) => {
         if (!room) {
             return res.status(404).json({
                 success: false,
-                error: { code: 'NOT_FOUND', message: '투표방을 찾을 수 없습니다' }
+                error: { code: ERROR_CODES.NOT_FOUND, message: '투표방을 찾을 수 없습니다' }
             });
         }
 
@@ -293,7 +274,7 @@ exports.getResults = async (req, res) => {
         console.error('getResults error:', error);
         res.status(500).json({
             success: false,
-            error: { code: 'SERVER_ERROR', message: '서버 오류가 발생했습니다' }
+            error: { code: ERROR_CODES.SERVER_ERROR, message: '서버 오류가 발생했습니다' }
         });
     }
 };

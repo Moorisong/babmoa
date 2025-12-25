@@ -3,25 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Header, VoteCard, LinkShare } from '@/components';
-import { roomsApi, ParkingInfo } from '@/lib/api';
+import { ROUTES } from '@/constants';
+import { roomsApi } from '@/lib/api';
+import type { Room } from '@/types';
 import { getParticipantId, hasVoted, setVoted, getTimeRemaining } from '@/lib/utils';
-
-interface Place {
-    placeId: string;
-    name: string;
-    address: string;
-    category: string;
-    categoryDetail?: string;
-    parkingInfo?: ParkingInfo | null;
-}
-
-interface Room {
-    roomId: string;
-    title: string;
-    places: Place[];
-    options: { allowPass: boolean; deadline: string };
-    result: { winnerPlaceId: string | null; decidedAt: string | null };
-}
 
 export default function RoomClient() {
     const params = useParams();
@@ -62,7 +47,7 @@ export default function RoomClient() {
         if (result.success && result.data) {
             setRoom(result.data);
             if (result.data.isClosed) {
-                router.replace(`/room/${roomId}/result`);
+                router.replace(ROUTES.ROOM_RESULT(roomId));
             }
         } else {
             setError(result.error?.message || '투표방을 찾을 수 없습니다');
@@ -87,7 +72,7 @@ export default function RoomClient() {
             } else {
                 alert(result.error?.message || '투표에 실패했습니다');
             }
-        } catch (error) {
+        } catch {
             alert('오류가 발생했습니다');
         } finally {
             setSubmitting(false);
@@ -148,7 +133,7 @@ export default function RoomClient() {
                                 <div className="card p-4 bg-indigo-50 border-indigo-200">
                                     <p className="text-indigo-700 font-medium mb-3">🎉 투표가 마감되었습니다!</p>
                                     <button
-                                        onClick={() => router.push(`/room/${roomId}/result`)}
+                                        onClick={() => router.push(ROUTES.ROOM_RESULT(roomId))}
                                         className="btn-primary w-full"
                                     >
                                         결과 보기 →
@@ -200,7 +185,7 @@ export default function RoomClient() {
                             <div className="card p-4 bg-indigo-50 border-indigo-200">
                                 <p className="text-indigo-700 font-medium mb-3">🎉 투표가 마감되었습니다!</p>
                                 <button
-                                    onClick={() => router.push(`/room/${roomId}/result`)}
+                                    onClick={() => router.push(ROUTES.ROOM_RESULT(roomId))}
                                     className="btn-primary w-full"
                                 >
                                     결과 보기 →

@@ -1,29 +1,17 @@
 const kakaoMapService = require('../services/kakaoMapService');
 const ParkingStats = require('../models/ParkingStats');
-
-// 최소 기록 수 기준
-const MIN_RECORD_COUNT = 3;
-
-// 현재 시간대 계산
-function getCurrentTimeSlot() {
-    const now = new Date();
-    const day = now.getDay();
-    const hour = now.getHours();
-
-    if (day === 0 || day === 6) return '주말';
-    if (hour >= 18) return '평일_저녁';
-    return '평일_점심';
-}
+const { CONFIG, ERROR_CODES } = require('../constants');
+const { getCurrentTimeSlot } = require('../utils');
 
 // GET /api/places/search - 장소 검색
 exports.searchPlaces = async (req, res) => {
     try {
-        const { keyword, x, y, radius, page = 1, size = 15, category, shuffle } = req.query;
+        const { keyword, x, y, radius, category } = req.query;
 
         if (!keyword) {
             return res.status(400).json({
                 success: false,
-                error: { code: 'INVALID_REQUEST', message: '검색어를 입력해주세요' }
+                error: { code: ERROR_CODES.INVALID_REQUEST, message: '검색어를 입력해주세요' }
             });
         }
 
@@ -68,7 +56,7 @@ exports.searchPlaces = async (req, res) => {
 
         const statsMap = new Map();
         parkingStats.forEach(stat => {
-            const hasEnoughData = stat.totalAttempts >= MIN_RECORD_COUNT;
+            const hasEnoughData = stat.totalAttempts >= CONFIG.MIN_PARKING_RECORDS;
             statsMap.set(stat.placeId, {
                 parkingAvailable: stat.successCount > 0 ? true : (stat.failCount > 0 ? false : null),
                 successRate: hasEnoughData ? stat.successRate : 0, // 정렬용 기본값 0
@@ -142,7 +130,7 @@ exports.searchPlaces = async (req, res) => {
         console.error('searchPlaces error:', error);
         res.status(500).json({
             success: false,
-            error: { code: 'SERVER_ERROR', message: error.message || '서버 오류가 발생했습니다' }
+            error: { code: ERROR_CODES.SERVER_ERROR, message: error.message || '서버 오류가 발생했습니다' }
         });
     }
 };
@@ -161,12 +149,11 @@ exports.getCategories = (req, res) => {
 exports.getPlacesByDistrict = async (req, res) => {
     try {
         const { district } = req.params;
-        const SUPPORTED_DISTRICTS = ['관악구', '영등포구', '강남구'];
 
-        if (!SUPPORTED_DISTRICTS.includes(district)) {
+        if (!CONFIG.SUPPORTED_DISTRICTS.includes(district)) {
             return res.status(400).json({
                 success: false,
-                error: { code: 'INVALID_DISTRICT', message: '지원하지 않는 지역입니다' }
+                error: { code: ERROR_CODES.INVALID_DISTRICT, message: '지원하지 않는 지역입니다' }
             });
         }
 
@@ -195,7 +182,7 @@ exports.getPlacesByDistrict = async (req, res) => {
 
         const statsMap = new Map();
         parkingStats.forEach(stat => {
-            const hasEnoughData = stat.totalAttempts >= MIN_RECORD_COUNT;
+            const hasEnoughData = stat.totalAttempts >= CONFIG.MIN_PARKING_RECORDS;
             statsMap.set(stat.placeId, {
                 parkingAvailable: stat.successCount > 0 ? true : (stat.failCount > 0 ? false : null),
                 successRate: hasEnoughData ? stat.successRate : null,
@@ -226,7 +213,7 @@ exports.getPlacesByDistrict = async (req, res) => {
         console.error('getPlacesByDistrict error:', error);
         res.status(500).json({
             success: false,
-            error: { code: 'SERVER_ERROR', message: error.message || '서버 오류가 발생했습니다' }
+            error: { code: ERROR_CODES.SERVER_ERROR, message: error.message || '서버 오류가 발생했습니다' }
         });
     }
 };

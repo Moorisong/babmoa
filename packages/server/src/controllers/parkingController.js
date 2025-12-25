@@ -1,5 +1,6 @@
 const { ParkingData, ParkingStats, VoteRoom } = require('../models');
 const { updateStatsOnNewRecord } = require('../services/aggregationService');
+const { ERROR_CODES } = require('../constants');
 
 // POST /api/parking - 주차 경험 기록
 exports.recordParking = async (req, res) => {
@@ -10,7 +11,7 @@ exports.recordParking = async (req, res) => {
         if (!roomId || !placeId || !participantId || parkingAvailable === undefined || !timeSlot) {
             return res.status(400).json({
                 success: false,
-                error: { code: 'INVALID_REQUEST', message: '필수 필드가 누락되었습니다' }
+                error: { code: ERROR_CODES.INVALID_REQUEST, message: '필수 필드가 누락되었습니다' }
             });
         }
 
@@ -19,7 +20,7 @@ exports.recordParking = async (req, res) => {
         if (!room) {
             return res.status(404).json({
                 success: false,
-                error: { code: 'NOT_FOUND', message: '투표방을 찾을 수 없습니다' }
+                error: { code: ERROR_CODES.NOT_FOUND, message: '투표방을 찾을 수 없습니다' }
             });
         }
 
@@ -56,7 +57,7 @@ exports.recordParking = async (req, res) => {
         console.error('recordParking error:', error);
         res.status(500).json({
             success: false,
-            error: { code: 'SERVER_ERROR', message: '서버 오류가 발생했습니다' }
+            error: { code: ERROR_CODES.SERVER_ERROR, message: '서버 오류가 발생했습니다' }
         });
     }
 };
@@ -110,7 +111,7 @@ exports.getStats = async (req, res) => {
         console.error('getStats error:', error);
         res.status(500).json({
             success: false,
-            error: { code: 'SERVER_ERROR', message: '서버 오류가 발생했습니다' }
+            error: { code: ERROR_CODES.SERVER_ERROR, message: '서버 오류가 발생했습니다' }
         });
     }
 };
