@@ -11,8 +11,8 @@ import { getParticipantId, hasRecordedParking, setRecordedParking, getTimeSlotFr
 import styles from './page.module.css';
 
 const TIME_SLOT_OPTIONS: { value: TimeSlot; label: string; emoji: string }[] = [
-    { value: '평일_점심', label: '점심', emoji: '🌤️' },
-    { value: '평일_저녁', label: '저녁', emoji: '🌙' },
+    { value: '평일_점심', label: '평일 점심', emoji: '🌤️' },
+    { value: '평일_저녁', label: '평일 저녁', emoji: '🌙' },
     { value: '주말', label: '주말', emoji: '🎉' },
 ];
 
