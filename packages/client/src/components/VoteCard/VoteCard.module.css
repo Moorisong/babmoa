@@ -1,0 +1,260 @@
+.card {
+    position: relative;
+    padding: 1rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    transition: all 0.2s;
+    animation: slideUp 0.5s ease-out backwards;
+}
+
+.card:hover {
+    border-color: #a5b4fc;
+}
+
+.cardSelected {
+    border-color: #6366f1 !important;
+    background-color: rgba(238, 242, 255, 0.5) !important;
+}
+
+.cardDisabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.cardClickable {
+    cursor: pointer;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #4f46e5;
+    background-color: #eef2ff;
+    border-radius: 9999px;
+    margin-bottom: 0.75rem;
+}
+
+.title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkIcon {
+    color: #6366f1;
+}
+
+.address {
+    font-size: 0.75rem;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.addressIcon {
+    width: 1rem;
+    height: 1rem;
+    color: #9ca3af;
+}
+
+.parkingSection {
+    margin-top: 0.5rem;
+}
+
+.parkingBadgeContainer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.parkingBadge {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.5rem;
+    border: 1px solid;
+    font-weight: 500;
+    cursor: help;
+}
+
+.parkingBadgeSuccess {
+    composes: parkingBadge;
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #15803d;
+}
+
+.parkingBadgeWarning {
+    composes: parkingBadge;
+    background-color: #fefce8;
+    border-color: #fef08a;
+    color: #a16207;
+}
+
+.parkingBadgeDanger {
+    composes: parkingBadge;
+    background-color: #fef2f2;
+    border-color: #fecaca;
+    color: #b91c1c;
+}
+
+.parkingDivider {
+    width: 1px;
+    height: 0.75rem;
+    background: currentColor;
+    opacity: 0.2;
+}
+
+.parkingCount {
+    font-size: 11px;
+    opacity: 0.9;
+}
+
+.referenceTag {
+    font-size: 10px;
+    color: #9ca3af;
+    border: 1px solid #f3f4f6;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    background-color: rgba(249, 250, 251, 0.5);
+}
+
+.emptyState {
+    margin-top: 0.5rem;
+    border: 1px solid #f3f4f6;
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    text-align: center;
+    background-color: rgba(249, 250, 251, 0.5);
+}
+
+.emptyText {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-bottom: 0.125rem;
+}
+
+.emptyHint {
+    font-size: 0.75rem;
+    color: #6366f1;
+    font-weight: 500;
+}
+
+.tooltip {
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    margin-bottom: 0.5rem;
+    width: 12rem;
+    pointer-events: none;
+    transform: translateX(-50%);
+    z-index: 50;
+}
+
+.tooltipContent {
+    background-color: #1f2937;
+    color: white;
+    font-size: 10px;
+    border-radius: 0.375rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem;
+    text-align: center;
+    position: relative;
+}
+
+.tooltipArrow {
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translateX(-50%);
+    border-width: 4px;
+    border-style: solid;
+    border-color: #1f2937 transparent transparent transparent;
+}
+
+.progressContainer {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.progressBar {
+    flex: 1;
+    height: 0.75rem;
+    background-color: #f3f4f6;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(to right, #6366f1, #a855f7);
+    transition: width 0.5s ease-out;
+}
+
+.voteCount {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #4f46e5;
+    min-width: 3rem;
+    text-align: right;
+}
+
+.selectionIndicator {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(to bottom right, #6366f1, #a855f7);
+    animation: scaleIn 0.3s ease-out forwards;
+}
+
+.icon {
+    width: 1rem;
+    height: 1rem;
+    color: white;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

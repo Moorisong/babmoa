@@ -1,0 +1,139 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 0;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.spinnerWrapper {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.spinner {
+    width: 4rem;
+    height: 4rem;
+    border: 4px solid #e0e7ff;
+    border-radius: 9999px;
+}
+
+.spinnerActive {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4rem;
+    height: 4rem;
+    border: 4px solid #6366f1;
+    border-radius: 9999px;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+.loadingText {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.5rem;
+}
+
+.loadingSubtext {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    text-align: center;
+}
+
+.optionsGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+.optionBtn {
+    padding: 1rem;
+    text-align: left;
+    border-radius: 0.75rem;
+    border: 2px solid #e5e7eb;
+    transition: all 0.2s;
+}
+
+.optionBtn:disabled {
+    opacity: 0.5;
+}
+
+.optionBtn:hover:not(:disabled) {
+    border-color: #9ca3af;
+}
+
+.optionBtnBlue:hover:not(:disabled) {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+}
+
+.optionBtnGreen:hover:not(:disabled) {
+    border-color: #22c55e;
+    background-color: #f0fdf4;
+}
+
+.optionBtnYellow:hover:not(:disabled) {
+    border-color: #eab308;
+    background-color: #fefce8;
+}
+
+.optionBtnOrange:hover:not(:disabled) {
+    border-color: #f97316;
+    background-color: #fff7ed;
+}
+
+.optionBtnRed:hover:not(:disabled) {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+}
+
+.emoji {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.label {
+    font-weight: 500;
+}
+
+.labelMuted {
+    font-weight: 500;
+    color: #9ca3af;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

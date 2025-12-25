@@ -1,0 +1,22 @@
+.footer {
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.links {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.link {
+    transition: color 0.2s;
+}
+
+.link:hover {
+    color: #4b5563;
+}
