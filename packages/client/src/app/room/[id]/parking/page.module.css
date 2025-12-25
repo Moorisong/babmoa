@@ -1,0 +1,248 @@
+.main {
+    max-width: 32rem;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+/* Loading State */
+.loadingContainer {
+    animation: pulse 2s infinite;
+}
+
+.loadingTitle {
+    height: 2rem;
+    background-color: #e5e7eb;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    width: 75%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.loadingSubtitle {
+    height: 1rem;
+    background-color: #e5e7eb;
+    border-radius: 0.5rem;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Error State */
+.errorMain {
+    max-width: 32rem;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+.errorText {
+    color: #ef4444;
+}
+
+/* Success State */
+.successMain {
+    max-width: 32rem;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.successContainer {
+    text-align: center;
+    padding: 2rem 0;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.successCircle {
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1rem;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.3);
+    animation: scaleIn 0.5s ease-out;
+}
+
+.successIcon {
+    width: 2rem;
+    height: 2rem;
+    color: white;
+}
+
+.successTitle {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.5rem;
+}
+
+.successText {
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.successHint {
+    font-size: 0.875rem;
+    color: #6366f1;
+    margin-bottom: 1.5rem;
+}
+
+.resultBtn {
+    padding: 0.75rem 2rem;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+}
+
+.resultBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px -1px rgba(99, 102, 241, 0.4);
+}
+
+/* Place Info */
+.placeInfo {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.placeLabel {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.placeName {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.placeAddress {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+/* Time Slot Card */
+.timeSlotCard {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.timeSlotLabel {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.75rem;
+}
+
+.timeSlotHint {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-left: 0.5rem;
+}
+
+.timeSlotOptions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.timeSlotBtn {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.timeSlotBtnActive {
+    background-color: #6366f1;
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+}
+
+.timeSlotBtnInactive {
+    background-color: #f3f4f6;
+    color: #4b5563;
+}
+
+.timeSlotBtnInactive:hover {
+    background-color: #e5e7eb;
+}
+
+.timeSlotEmoji {
+    font-size: 1.125rem;
+}
+
+.timeSlotText {
+    display: block;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Form Container */
+.formContainer {
+    background: white;
+    border-radius: 1rem;
+    border: 1px solid #e5e7eb;
+    padding: 1.5rem;
+}
+
+/* Skip Button */
+.skipBtn {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    color: #4b5563;
+    font-weight: 500;
+    border-radius: 0.75rem;
+    transition: background-color 0.2s;
+}
+
+.skipBtn:hover {
+    background-color: #f9fafb;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}

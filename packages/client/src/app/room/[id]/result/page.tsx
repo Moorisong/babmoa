@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import classNames from 'classnames';
 import { Header, VoteCard, LinkShare } from '@/components';
 import { ROUTES } from '@/constants';
 import { roomsApi } from '@/lib/api';
 import type { Room } from '@/types';
 import { hasRecordedParking } from '@/lib/utils';
+import styles from './page.module.css';
 
 interface VoteResultItem {
     placeId: string | null;
@@ -71,12 +73,12 @@ export default function ResultPage() {
         return (
             <>
                 <Header />
-                <main className="max-w-lg mx-auto px-4 py-8">
-                    <div className="space-y-4">
-                        <div className="h-8 shimmer rounded-lg w-3/4 mx-auto"></div>
-                        <div className="h-32 shimmer rounded-2xl"></div>
-                        <div className="card p-6 shimmer h-24"></div>
-                        <div className="card p-6 shimmer h-24"></div>
+                <main className={styles.main}>
+                    <div className={styles.loadingContainer}>
+                        <div className={classNames(styles.shimmer, styles.shimmerTitle)}></div>
+                        <div className={classNames(styles.shimmer, styles.shimmerWinner)}></div>
+                        <div className={classNames(styles.shimmer, styles.shimmerCard)}></div>
+                        <div className={classNames(styles.shimmer, styles.shimmerCard)}></div>
                     </div>
                 </main>
             </>
@@ -87,10 +89,10 @@ export default function ResultPage() {
         return (
             <>
                 <Header />
-                <main className="max-w-lg mx-auto px-4 py-8 text-center">
-                    <div className="card p-8 animate-fade-in">
-                        <p className="text-4xl mb-4">😢</p>
-                        <p className="text-red-500 font-medium">{error || '오류가 발생했습니다'}</p>
+                <main className={styles.errorMain}>
+                    <div className={styles.errorCard}>
+                        <p className={styles.errorEmoji}>😢</p>
+                        <p className={styles.errorText}>{error || '오류가 발생했습니다'}</p>
                     </div>
                 </main>
             </>
@@ -100,46 +102,39 @@ export default function ResultPage() {
     return (
         <>
             <Header />
-            <main className="max-w-lg mx-auto px-4 py-8">
-                {/* 결과 헤더 */}
-                <div className="text-center mb-8 animate-fade-in">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{room.title}</h1>
-                    <div className="inline-block px-4 py-2 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
+            <main className={styles.main}>
+                <div className={styles.resultHeader}>
+                    <h1 className={styles.resultTitle}>{room.title}</h1>
+                    <div className={styles.totalVotesBadge}>
                         👥 총 {totalVotes}명 투표
                     </div>
                 </div>
 
-                {/* 우승 장소 */}
                 {winnerPlace && (
-                    <div className="relative overflow-hidden bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white rounded-3xl p-6 mb-8 animate-scale-in shadow-xl">
-                        <div className="absolute top-0 right-0 text-8xl opacity-20 -mt-4 -mr-4">🏆</div>
-                        <div className="relative">
-                            <div className="flex items-center gap-2 mb-4">
-                                <span className="text-2xl">🎉</span>
-                                <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">
-                                    확정 장소
-                                </span>
+                    <div className={styles.winnerCard}>
+                        <div className={styles.winnerEmoji}>🏆</div>
+                        <div className={styles.winnerContent}>
+                            <div className={styles.winnerHeader}>
+                                <span className={styles.winnerHeaderEmoji}>🎉</span>
+                                <span className={styles.winnerBadge}>확정 장소</span>
                             </div>
-                            <h2 className="text-3xl font-bold mb-2">{winnerPlace.name}</h2>
-                            <p className="text-white/80 flex items-center gap-1 text-sm">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <h2 className={styles.winnerName}>{winnerPlace.name}</h2>
+                            <p className={styles.winnerAddress}>
+                                <svg className={styles.winnerAddressIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                 </svg>
                                 {winnerPlace.address}
                             </p>
-                            <div className="mt-4 flex items-center gap-2">
-                                <span className="text-3xl font-bold">{getVoteCount(winnerPlace.placeId)}</span>
-                                <span className="text-white/80">표</span>
+                            <div className={styles.winnerVotes}>
+                                <span className={styles.winnerVoteCount}>{getVoteCount(winnerPlace.placeId)}</span>
+                                <span className={styles.winnerVoteLabel}>표</span>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* 모든 투표 결과 */}
-                <div className="space-y-3 mb-8">
-                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-                        📊 전체 결과
-                    </h3>
+                <div className={styles.resultsSection}>
+                    <h3 className={styles.resultsTitle}>📊 전체 결과</h3>
                     {room.places.map((place, index) => (
                         <VoteCard
                             key={place.placeId}
@@ -153,15 +148,14 @@ export default function ResultPage() {
                         />
                     ))}
 
-                    {/* 상관없음 투표 */}
                     {votes.some(v => v.placeId === null) && (
-                        <div className="card p-4 animate-slide-up" style={{ animationDelay: `${room.places.length * 0.1}s` }}>
-                            <div className="flex items-center justify-between">
-                                <span className="font-medium text-gray-600 flex items-center gap-2">
-                                    <span className="text-xl">🤷</span>
+                        <div className={styles.passCard} style={{ animationDelay: `${room.places.length * 0.1}s` }}>
+                            <div className={styles.passContent}>
+                                <span className={styles.passLabel}>
+                                    <span className={styles.passEmoji}>🤷</span>
                                     상관없어요
                                 </span>
-                                <span className="text-sm font-bold text-indigo-600">
+                                <span className={styles.passVotes}>
                                     {votes.find(v => v.placeId === null)?.count || 0}표
                                 </span>
                             </div>
@@ -169,21 +163,19 @@ export default function ResultPage() {
                     )}
                 </div>
 
-                {/* 공유 */}
-                <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
+                <div style={{ animationDelay: '0.3s' }}>
                     <LinkShare title={room.title} />
                 </div>
 
-                {/* 주차 경험 기록 유도 */}
                 {showParkingPrompt && (
-                    <div className="mt-6 card p-5 border-2 border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 animate-slide-up">
-                        <p className="text-gray-800 font-medium mb-4 flex items-center gap-2">
-                            <span className="text-xl">🚗</span>
+                    <div className={styles.parkingPrompt}>
+                        <p className={styles.parkingPromptContent}>
+                            <span className={styles.parkingPromptEmoji}>🚗</span>
                             방문하셨나요? 주차 경험을 공유해주세요!
                         </p>
                         <Link
                             href={ROUTES.ROOM_PARKING(roomId)}
-                            className="block w-full py-3 text-center btn-primary"
+                            className={styles.parkingPromptBtn}
                         >
                             주차 경험 기록하기 →
                         </Link>

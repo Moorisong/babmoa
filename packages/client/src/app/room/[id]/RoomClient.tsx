@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import classNames from 'classnames';
 import { Header, VoteCard, LinkShare } from '@/components';
 import { ROUTES } from '@/constants';
 import { roomsApi } from '@/lib/api';
 import type { Room } from '@/types';
 import { getParticipantId, hasVoted, setVoted, getTimeRemaining } from '@/lib/utils';
+import styles from './RoomClient.module.css';
 
 export default function RoomClient() {
     const params = useParams();
@@ -21,7 +23,6 @@ export default function RoomClient() {
     const [error, setError] = useState<string | null>(null);
     const [timeRemaining, setTimeRemaining] = useState<string>('');
 
-    // 실시간 카운트다운
     useEffect(() => {
         if (!room) return;
 
@@ -83,13 +84,13 @@ export default function RoomClient() {
         return (
             <>
                 <Header />
-                <main className="max-w-lg mx-auto px-4 py-8">
-                    <div className="space-y-4">
-                        <div className="h-8 shimmer rounded-lg w-3/4"></div>
-                        <div className="h-4 shimmer rounded-lg w-1/2"></div>
-                        <div className="card p-6 shimmer h-24"></div>
-                        <div className="card p-6 shimmer h-24"></div>
-                        <div className="card p-6 shimmer h-24"></div>
+                <main className={styles.main}>
+                    <div className={styles.loadingContainer}>
+                        <div className={classNames(styles.shimmer, styles.shimmerTitle)}></div>
+                        <div className={classNames(styles.shimmer, styles.shimmerSubtitle)}></div>
+                        <div className={classNames(styles.shimmer, styles.shimmerCard)}></div>
+                        <div className={classNames(styles.shimmer, styles.shimmerCard)}></div>
+                        <div className={classNames(styles.shimmer, styles.shimmerCard)}></div>
                     </div>
                 </main>
             </>
@@ -100,56 +101,55 @@ export default function RoomClient() {
         return (
             <>
                 <Header />
-                <main className="max-w-lg mx-auto px-4 py-8 text-center">
-                    <div className="card p-8 animate-fade-in">
-                        <p className="text-4xl mb-4">😢</p>
-                        <p className="text-red-500 font-medium">{error || '오류가 발생했습니다'}</p>
+                <main className={styles.errorMain}>
+                    <div className={styles.errorCard}>
+                        <p className={styles.errorEmoji}>😢</p>
+                        <p className={styles.errorText}>{error || '오류가 발생했습니다'}</p>
                     </div>
                 </main>
             </>
         );
     }
 
-    // 투표 완료 상태
     if (voted) {
         return (
             <>
                 <Header />
-                <main className="max-w-lg mx-auto px-4 py-8">
-                    <div className="text-center mb-8 animate-fade-in">
-                        <div className="success-circle mx-auto mb-4 animate-scale-in">
-                            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <main className={styles.main}>
+                    <div className={styles.successHero}>
+                        <div className={styles.successCircle}>
+                            <svg className={styles.successIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
-                        <h1 className="text-2xl font-bold text-gray-900 mb-2">투표 완료! ✨</h1>
-                        <p className="text-gray-500">마감 후 결과를 확인하세요</p>
+                        <h1 className={styles.successTitle}>투표 완료! ✨</h1>
+                        <p className={styles.successSubtitle}>마감 후 결과를 확인하세요</p>
 
                         {timeRemaining === '마감됨' ? (
-                            <div className="mt-4 space-y-3">
-                                <div className="inline-block px-4 py-2 bg-red-50 text-red-600 rounded-full text-sm font-medium">
+                            <div className={styles.statusContainer}>
+                                <div className={classNames(styles.timeBadge, styles.timeBadgeClosed)}>
                                     ⏰ 투표 마감됨
                                 </div>
-                                <div className="card p-4 bg-indigo-50 border-indigo-200">
-                                    <p className="text-indigo-700 font-medium mb-3">🎉 투표가 마감되었습니다!</p>
+                                <div className={styles.closedCard}>
+                                    <p className={styles.closedText}>🎉 투표가 마감되었습니다!</p>
                                     <button
                                         onClick={() => router.push(ROUTES.ROOM_RESULT(roomId))}
-                                        className="btn-primary w-full"
+                                        className={styles.resultBtn}
                                     >
                                         결과 보기 →
                                     </button>
                                 </div>
                             </div>
                         ) : (
-                            <div className="inline-block mt-3 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-sm font-medium">
+                            <div className={classNames(styles.timeBadge, styles.timeBadgeOpen)}>
                                 ⏰ {timeRemaining}
                             </div>
                         )}
                     </div>
 
-                    <div className="mb-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-                        <h2 className="text-lg font-bold text-gray-900 mb-4">{room.title}</h2>
-                        <div className="space-y-3">
+                    <div className={styles.section} style={{ animationDelay: '0.1s' }}>
+                        <h2 className={styles.sectionTitle}>{room.title}</h2>
+                        <div className={styles.placeList}>
                             {room.places.map((place, index) => (
                                 <VoteCard
                                     key={place.placeId}
@@ -163,7 +163,7 @@ export default function RoomClient() {
                         </div>
                     </div>
 
-                    <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                    <div style={{ animationDelay: '0.2s' }}>
                         <LinkShare title={room.title} />
                     </div>
                 </main>
@@ -174,33 +174,32 @@ export default function RoomClient() {
     return (
         <>
             <Header />
-            <main className="max-w-lg mx-auto px-4 py-8">
-                <div className="mb-8 animate-fade-in">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{room.title}</h1>
+            <main className={styles.main}>
+                <div className={styles.header}>
+                    <h1 className={styles.title}>{room.title}</h1>
                     {timeRemaining === '마감됨' ? (
-                        <div className="space-y-3">
-                            <div className="inline-block px-4 py-2 bg-red-50 text-red-600 rounded-full text-sm font-medium">
+                        <div className={styles.statusContainer}>
+                            <div className={classNames(styles.timeBadge, styles.timeBadgeClosed)}>
                                 ⏰ 투표 마감됨
                             </div>
-                            <div className="card p-4 bg-indigo-50 border-indigo-200">
-                                <p className="text-indigo-700 font-medium mb-3">🎉 투표가 마감되었습니다!</p>
+                            <div className={styles.closedCard}>
+                                <p className={styles.closedText}>🎉 투표가 마감되었습니다!</p>
                                 <button
                                     onClick={() => router.push(ROUTES.ROOM_RESULT(roomId))}
-                                    className="btn-primary w-full"
+                                    className={styles.resultBtn}
                                 >
                                     결과 보기 →
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <div className="inline-block px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-sm font-medium">
+                        <div className={classNames(styles.timeBadge, styles.timeBadgeOpen)}>
                             ⏰ {timeRemaining}
                         </div>
                     )}
                 </div>
 
-                {/* 투표 선택 */}
-                <div className="space-y-3 mb-6">
+                <div className={styles.voteList}>
                     {room.places.map((place, index) => (
                         <VoteCard
                             key={place.placeId}
@@ -211,34 +210,31 @@ export default function RoomClient() {
                         />
                     ))}
 
-                    {/* 상관없음 옵션 */}
                     {room.options.allowPass && (
                         <button
                             onClick={() => setSelectedPlaceId(null)}
-                            className={`card w-full p-4 text-left transition-all animate-slide-up ${selectedPlaceId === null
-                                ? 'card-selected !border-gray-500 !bg-gray-50'
-                                : ''
-                                }`}
+                            className={classNames(styles.passOption, {
+                                [styles.passOptionSelected]: selectedPlaceId === null
+                            })}
                             style={{ animationDelay: `${room.places.length * 0.1}s` }}
                         >
-                            <span className="font-medium text-gray-600 flex items-center gap-2">
-                                <span className="text-xl">🤷</span>
+                            <span className={styles.passContent}>
+                                <span className={styles.passEmoji}>🤷</span>
                                 상관없어요
                             </span>
                         </button>
                     )}
                 </div>
 
-                {/* 투표 버튼 */}
                 <button
                     onClick={handleVote}
                     disabled={submitting || (selectedPlaceId === undefined)}
-                    className="w-full btn-primary animate-slide-up"
+                    className={styles.submitBtn}
                     style={{ animationDelay: `${(room.places.length + 1) * 0.1}s` }}
                 >
                     {submitting ? (
-                        <span className="flex items-center justify-center gap-2">
-                            <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                        <span className={styles.submitLoading}>
+                            <svg className={styles.submitSpinner} viewBox="0 0 24 24" fill="none">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                             </svg>
