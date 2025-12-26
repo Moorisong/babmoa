@@ -9,6 +9,10 @@ const voteRoomSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    creatorParticipantId: {
+        type: String,
+        default: null  // 기존 데이터 호환성 유지
+    },
     places: [{
         placeId: { type: String, required: true },
         name: { type: String, required: true },

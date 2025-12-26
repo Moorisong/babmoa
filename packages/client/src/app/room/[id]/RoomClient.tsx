@@ -22,6 +22,10 @@ export default function RoomClient() {
     const [voted, setVotedState] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [timeRemaining, setTimeRemaining] = useState<string>('');
+    const [isClosing, setIsClosing] = useState(false);  // 마감 중 상태
+
+    // 생성자 여부 확인
+    const isCreator = room?.creatorParticipantId === getParticipantId();
 
     useEffect(() => {
         if (!room) return;
@@ -77,6 +81,29 @@ export default function RoomClient() {
             alert('오류가 발생했습니다');
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleClose = async () => {
+        if (!isCreator || !room) return;
+
+        if (!confirm('투표를 지금 마감하시겠습니까?')) return;
+
+        setIsClosing(true);
+        try {
+            const participantId = getParticipantId();
+            const result = await roomsApi.close(roomId, participantId);
+
+            if (result.success) {
+                // 마감 성공 시 결과 페이지로 이동
+                router.push(ROUTES.ROOM_RESULT(roomId));
+            } else {
+                alert(result.error?.message || '투표 마감에 실패했습니다');
+            }
+        } catch {
+            alert('오류가 발생했습니다');
+        } finally {
+            setIsClosing(false);
         }
     };
 
@@ -141,10 +168,27 @@ export default function RoomClient() {
                                 </div>
                             </div>
                         ) : (
-                            <div className={classNames(styles.timeBadge, styles.timeBadgeOpen)}>
-                                ⏰ {timeRemaining}
+                            <div className={styles.statusContainer}>
+                                <div className={classNames(styles.timeBadge, styles.timeBadgeOpen)}>
+                                    ⏰ {timeRemaining}
+                                </div>
+                                {isCreator && !room.isClosed && (
+                                    <button
+                                        onClick={handleClose}
+                                        disabled={isClosing}
+                                        className={styles.closeBtn}
+                                    >
+                                        {isClosing ? '마감 중...' : '🔒 지금 마감하기'}
+                                    </button>
+                                )}
                             </div>
                         )}
+
+                        <div className={styles.statsRow}>
+                            <span className={styles.statsBadge}>
+                                ✓ {room.totalVotes || 0}명 참여
+                            </span>
+                        </div>
                     </div>
 
                     <div className={styles.section} style={{ animationDelay: '0.1s' }}>
@@ -193,10 +237,27 @@ export default function RoomClient() {
                             </div>
                         </div>
                     ) : (
-                        <div className={classNames(styles.timeBadge, styles.timeBadgeOpen)}>
-                            ⏰ {timeRemaining}
+                        <div className={styles.statusContainer}>
+                            <div className={classNames(styles.timeBadge, styles.timeBadgeOpen)}>
+                                ⏰ {timeRemaining}
+                            </div>
+                            {isCreator && !room.isClosed && (
+                                <button
+                                    onClick={handleClose}
+                                    disabled={isClosing}
+                                    className={styles.closeBtn}
+                                >
+                                    {isClosing ? '마감 중...' : '🔒 지금 마감하기'}
+                                </button>
+                            )}
                         </div>
                     )}
+                </div>
+
+                <div className={styles.statsRow}>
+                    <span className={styles.statsBadge}>
+                        ✓ {room.totalVotes || 0}명 참여
+                    </span>
                 </div>
 
                 <div className={styles.voteList}>

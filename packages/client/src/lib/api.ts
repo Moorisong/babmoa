@@ -55,6 +55,12 @@ export const roomsApi = {
         }),
 
     getResults: (roomId: string) => fetchApi<VoteResult>(API.ROOM_RESULTS(roomId)),
+
+    close: (roomId: string, participantId: string) =>
+        fetchApi<{ closed: boolean }>(API.ROOM_CLOSE(roomId), {
+            method: 'POST',
+            body: JSON.stringify({ participantId }),
+        }),
 };
 
 // 주차 데이터 API

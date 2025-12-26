@@ -324,3 +324,58 @@
         background-position: -200% 0;
     }
 }
+
+/* Stats Row */
+.statsRow {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    /* 우측 정렬 */
+    gap: 0.75rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.statsBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: transparent;
+    /* 배경 제거 */
+    color: #9ca3af;
+    /* 연한 회색 */
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    /* 크기 축소 */
+    font-weight: 400;
+    /* 폰트 두께 감소 */
+}
+
+/* Close Button */
+.closeBtn {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+    /* 더 연한 핑크 배경 */
+    color: #701a3c;
+    /* 더 진한 핑크 텍스트 */
+    font-weight: 500;
+    font-size: 0.875rem;
+    border-radius: 9999px;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(251, 207, 232, 0.3);
+    cursor: pointer;
+    /* 포인터 커서 */
+}
+
+.closeBtn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(251, 207, 232, 0.4);
+    background: linear-gradient(135deg, #fbcfe8 0%, #f9a8d4 100%);
+    /* hover 시 조금 진하게 */
+}
+
+.closeBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
