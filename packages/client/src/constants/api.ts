@@ -6,9 +6,11 @@ export const API = {
     ROOM: (id: string) => `/rooms/${id}`,
     ROOM_VOTE: (id: string) => `/rooms/${id}/vote`,
     ROOM_RESULTS: (id: string) => `/rooms/${id}/results`,
+    ROOM_CLOSE: (id: string) => `/rooms/${id}/close`,  // 투표 마감
     PARKING: '/parking',
     PARKING_STATS: (placeId: string) => `/parking/${placeId}/stats`,
     PLACES_SEARCH: '/places/search',
     PLACES_CATEGORIES: '/places/categories',
     PLACES_DISTRICT: (district: string) => `/places/district/${encodeURIComponent(district)}`,
 } as const;
+

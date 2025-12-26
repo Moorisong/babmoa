@@ -65,6 +65,7 @@ exports.createRoom = async (req, res) => {
         const room = await VoteRoom.create({
             title,
             places,
+            creatorParticipantId: participantId,  // 생성자 ID 저장
             options: {
                 allowPass: options.allowPass ?? true,
                 deadline: new Date(options.deadline)
@@ -110,6 +111,9 @@ exports.getRoom = async (req, res) => {
             await room.checkAndClose();
         }
 
+        // 투표 참여자 수 집계
+        const totalVotes = await Vote.countDocuments({ roomId: id });
+
         // 주차 정보 병합 (현재 시간대 기준)
         const placesWithParking = room.places.map(p => p.toObject ? p.toObject() : p);
         if (placesWithParking.length > 0) {
@@ -149,7 +153,9 @@ exports.getRoom = async (req, res) => {
                 options: room.options,
                 result: room.result,
                 isClosed: room.isExpired(),
-                createdAt: room.createdAt
+                createdAt: room.createdAt,
+                totalVotes,  // 투표 참여자 수
+                creatorParticipantId: room.creatorParticipantId  // 생성자 ID
             }
         });
     } catch (error) {
@@ -272,6 +278,62 @@ exports.getResults = async (req, res) => {
         });
     } catch (error) {
         console.error('getResults error:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: ERROR_CODES.SERVER_ERROR, message: '서버 오류가 발생했습니다' }
+        });
+    }
+};
+
+// POST /api/rooms/:id/close - 투표 마감하기 (생성자만 가능)
+exports.closeRoom = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { participantId } = req.body;
+
+        // 유효성 검사
+        if (!participantId) {
+            return res.status(400).json({
+                success: false,
+                error: { code: ERROR_CODES.INVALID_REQUEST, message: 'participantId는 필수입니다' }
+            });
+        }
+
+        // 투표방 조회
+        const room = await VoteRoom.findById(id);
+        if (!room) {
+            return res.status(404).json({
+                success: false,
+                error: { code: ERROR_CODES.NOT_FOUND, message: '투표방을 찾을 수 없습니다' }
+            });
+        }
+
+        // 생성자 확인
+        if (room.creatorParticipantId !== participantId) {
+            return res.status(403).json({
+                success: false,
+                error: { code: ERROR_CODES.FORBIDDEN, message: '투표를 종료할 권한이 없습니다' }
+            });
+        }
+
+        // 이미 마감된 경우
+        if (room.isExpired()) {
+            return res.status(400).json({
+                success: false,
+                error: { code: ERROR_CODES.VOTE_CLOSED, message: '이미 마감된 투표입니다' }
+            });
+        }
+
+        // 마감 시간을 현재 시간으로 변경
+        room.options.deadline = new Date();
+        await room.checkAndClose();
+
+        res.json({
+            success: true,
+            data: { closed: true }
+        });
+    } catch (error) {
+        console.error('closeRoom error:', error);
         res.status(500).json({
             success: false,
             error: { code: ERROR_CODES.SERVER_ERROR, message: '서버 오류가 발생했습니다' }

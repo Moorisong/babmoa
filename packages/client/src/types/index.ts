@@ -52,6 +52,8 @@ export interface Room {
     result: RoomResult;
     isClosed?: boolean;
     createdAt?: string;
+    totalVotes?: number;  // 투표 참여자 수
+    creatorParticipantId?: string | null;  // 생성자 ID
 }
 
 export interface VoteResult {
