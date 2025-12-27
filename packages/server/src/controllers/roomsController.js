@@ -285,7 +285,7 @@ exports.getResults = async (req, res) => {
     }
 };
 
-// POST /api/rooms/:id/close - 투표 마감하기 (생성자만 가능)
+// POST /api/rooms/:id/close - 투표 마감하기 (누구나 가능)
 exports.closeRoom = async (req, res) => {
     try {
         const { id } = req.params;
@@ -308,13 +308,6 @@ exports.closeRoom = async (req, res) => {
             });
         }
 
-        // 생성자 확인
-        if (room.creatorParticipantId !== participantId) {
-            return res.status(403).json({
-                success: false,
-                error: { code: ERROR_CODES.FORBIDDEN, message: '투표를 종료할 권한이 없습니다' }
-            });
-        }
 
         // 이미 마감된 경우
         if (room.isExpired()) {

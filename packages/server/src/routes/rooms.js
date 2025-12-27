@@ -14,7 +14,7 @@ router.post('/:id/vote', roomsController.vote);
 // GET /api/rooms/:id/results - 투표 결과 조회 (마감 후만)
 router.get('/:id/results', roomsController.getResults);
 
-// POST /api/rooms/:id/close - 투표 마감하기 (생성자만 가능)
+// POST /api/rooms/:id/close - 투표 마감하기 (누구나 가능)
 router.post('/:id/close', roomsController.closeRoom);
 
 module.exports = router;
