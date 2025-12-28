@@ -2,11 +2,15 @@ module.exports = {
     apps: [
         {
             name: "babmoa",
-            script: "/home/ksh/babmoa/packages/server/src/index.js",
-            env_file: "/home/ksh/babmoa/packages/server/.env",
+            script: "src/index.js",
+            cwd: "/home/ksh/babmoa/packages/server",
             instances: 1,
+            exec_mode: "fork",
             autorestart: true,
-            watch: false
+            watch: false,
+            env: {
+                NODE_ENV: "production"
+            }
         }
     ]
 };

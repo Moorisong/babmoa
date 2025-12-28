@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+require('dotenv').config();
 
 const { roomsRouter, parkingRouter, b2bRouter, placesRouter } = require('./routes');
 
