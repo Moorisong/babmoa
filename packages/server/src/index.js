@@ -10,14 +10,14 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: true,  // 모든 origin 허용 (개발용)
+  origin: ['https://babmoa-vote.vercel.app'],
   credentials: true
 }));
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/babmoa',  {
-  dbName: 'babmoa', 
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/babmoa', {
+  dbName: 'babmoa',
   // dbName: 'test',
 })
   .then(() => console.log('MongoDB connected'))
@@ -51,6 +51,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
