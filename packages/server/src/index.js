@@ -10,18 +10,10 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: true,  // 모든 origin 허용 (개발용)
+  origin: ['https://babmoa-vote.vercel.app'],
   credentials: true
 }));
 app.use(express.json());
-
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/babmoa',  {
-  // dbName: 'babmoa', 
-  dbName: 'test',
-})
-  .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.error('MongoDB connection error:', err));
 
 // Health Check
 app.get('/api/health', (req, res) => {
@@ -51,6 +43,21 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Server Startup with MongoDB Connection
+async function startServer() {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/babmoa', {
+      dbName: 'babmoa',
+    });
+    console.log('MongoDB connected');
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  }
+}
+
+startServer();

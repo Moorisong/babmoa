@@ -85,7 +85,7 @@ export default function RoomClient() {
     };
 
     const handleClose = async () => {
-        if (!isCreator || !room) return;
+        if (!room) return;
 
         if (!confirm('투표를 지금 마감하시겠습니까?')) return;
 
@@ -172,7 +172,7 @@ export default function RoomClient() {
                                 <div className={classNames(styles.timeBadge, styles.timeBadgeOpen)}>
                                     ⏰ {timeRemaining}
                                 </div>
-                                {isCreator && !room.isClosed && (
+                                {!room.isClosed && (
                                     <button
                                         onClick={handleClose}
                                         disabled={isClosing}
@@ -241,7 +241,7 @@ export default function RoomClient() {
                             <div className={classNames(styles.timeBadge, styles.timeBadgeOpen)}>
                                 ⏰ {timeRemaining}
                             </div>
-                            {isCreator && !room.isClosed && (
+                            {!room.isClosed && (
                                 <button
                                     onClick={handleClose}
                                     disabled={isClosing}

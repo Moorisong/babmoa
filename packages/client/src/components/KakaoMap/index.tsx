@@ -98,7 +98,9 @@ export default function KakaoMap({ district, onMarkerClick, focusCoords }: Kakao
         const centerLat = center.getLat();
         const centerLng = center.getLng();
 
-        if (!isInSupportedArea(centerLat, centerLng)) {
+        // 현재 선택된 구의 경계만 확인
+        const currentDistrictBounds = DISTRICT_BOUNDS[district];
+        if (!isInDistrict(centerLat, centerLng, currentDistrictBounds)) {
             setIsOutOfBounds(true);
             clearMarkers();
             setSearchingPlaces(false);
@@ -115,10 +117,11 @@ export default function KakaoMap({ district, onMarkerClick, focusCoords }: Kakao
             setSearchingPlaces(false);
 
             if (status === window.kakao.maps.services.Status.OK) {
+                // 선택된 구의 경계 내에만 있는 장소만 필터링
                 const filteredResults = results.filter(place => {
                     const placeLat = parseFloat(place.y);
                     const placeLng = parseFloat(place.x);
-                    return isInSupportedArea(placeLat, placeLng);
+                    return isInDistrict(placeLat, placeLng, currentDistrictBounds);
                 });
 
                 if (filteredResults.length === 0) {
@@ -149,7 +152,7 @@ export default function KakaoMap({ district, onMarkerClick, focusCoords }: Kakao
                 });
             }
         }, { bounds, useMapBounds: true });
-    }, [isLoaded, clearMarkers, onMarkerClick]);
+    }, [isLoaded, clearMarkers, onMarkerClick, district]);
 
     const handleMapIdle = useCallback(() => {
         if (searchTimeoutRef.current) {
