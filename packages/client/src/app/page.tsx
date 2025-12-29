@@ -240,6 +240,7 @@ export default function HomePage() {
 
           <div className={styles.mapContainer}>
             <KakaoMap
+              key={selectedDistrict}
               district={selectedDistrict}
               onMarkerClick={handleMarkerClick}
               focusCoords={focusCoords}
