@@ -32,7 +32,7 @@ declare global {
     }
 }
 
-interface MapOptions { center: LatLng; level: number; }
+interface MapOptions { center: LatLng; level: number; maxLevel?: number; }
 interface LatLng { getLat: () => number; getLng: () => number; }
 interface LatLngBounds { extend: (latlng: LatLng) => void; getSouthWest: () => LatLng; getNorthEast: () => LatLng; }
 interface MarkerOptions { position: LatLng; map?: KakaoMapInstance; }
@@ -111,7 +111,12 @@ export default function KakaoMap({ district, onMarkerClick, focusCoords }: Kakao
         setSearchingPlaces(true);
         clearMarkers();
 
-        const bounds = mapInstanceRef.current.getBounds();
+        // 선택된 구의 고정 경계를 사용 (지도 bounds가 아닌)
+        const districtBounds = new window.kakao.maps.LatLngBounds();
+        const sw = new window.kakao.maps.LatLng(currentDistrictBounds.south, currentDistrictBounds.west);
+        const ne = new window.kakao.maps.LatLng(currentDistrictBounds.north, currentDistrictBounds.east);
+        districtBounds.extend(sw);
+        districtBounds.extend(ne);
 
         placesServiceRef.current.categorySearch('FD6', (results, status) => {
             setSearchingPlaces(false);
@@ -151,7 +156,7 @@ export default function KakaoMap({ district, onMarkerClick, focusCoords }: Kakao
                     markersRef.current.push(marker);
                 });
             }
-        }, { bounds, useMapBounds: true });
+        }, { bounds: districtBounds });
     }, [isLoaded, clearMarkers, onMarkerClick, district]);
 
     const handleMapIdle = useCallback(() => {
@@ -163,6 +168,7 @@ export default function KakaoMap({ district, onMarkerClick, focusCoords }: Kakao
         }, 300);
     }, [searchPlacesInBounds]);
 
+    // 지도 초기화 (최초 한 번만 실행)
     useEffect(() => {
         if (!window.kakao?.maps) return;
 
@@ -171,7 +177,11 @@ export default function KakaoMap({ district, onMarkerClick, focusCoords }: Kakao
 
             const config = DISTRICT_CONFIG[district];
             const center = new window.kakao.maps.LatLng(config.lat, config.lng);
-            const map = new window.kakao.maps.Map(mapRef.current, { center, level: config.level });
+            const map = new window.kakao.maps.Map(mapRef.current, {
+                center,
+                level: config.level,
+                maxLevel: 7  // 최대 줌아웃 레벨 제한 (너무 멀리 줌아웃 방지)
+            });
             const places = new window.kakao.maps.services.Places();
 
             mapInstanceRef.current = map;
@@ -186,15 +196,31 @@ export default function KakaoMap({ district, onMarkerClick, focusCoords }: Kakao
         return () => {
             if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
         };
-    }, [district, handleMapIdle, searchPlacesInBounds]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // 최초 마운트 시에만 실행
 
     useEffect(() => {
         if (!mapInstanceRef.current || !isLoaded) return;
+
+        // district 변경 시 진행 중인 검색 타임아웃 취소
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+            searchTimeoutRef.current = null;
+        }
+
+        // 기존 마커 제거 및 상태 초기화
+        clearMarkers();
+        setSearchingPlaces(false);
+        setIsOutOfBounds(false);
+
         const config = DISTRICT_CONFIG[district];
         const center = new window.kakao.maps.LatLng(config.lat, config.lng);
         mapInstanceRef.current.panTo(center);
         mapInstanceRef.current.setLevel(config.level);
-    }, [district, isLoaded]);
+
+        // 새로운 지역의 장소 검색
+        setTimeout(() => searchPlacesInBounds(), 500);
+    }, [district, isLoaded, clearMarkers, searchPlacesInBounds]);
 
     useEffect(() => {
         if (!mapInstanceRef.current || !isLoaded || !focusCoords) return;
