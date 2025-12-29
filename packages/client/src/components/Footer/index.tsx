@@ -1,9 +1,15 @@
 import Link from 'next/link';
 import styles from './Footer.module.css';
+import KakaoAdFit from '../KakaoAdFit';
 
 export default function Footer() {
     return (
         <footer className={styles.footer}>
+            <KakaoAdFit
+                unit="DAN-autWIUxSZYqBcG6n"
+                width={320}
+                height={50}
+            />
             <div className={styles.links}>
                 <Link href="/terms" className={styles.link}>
                     이용약관
