@@ -9,7 +9,7 @@ export const CONFIG = {
     ROOM_CREATION_COOLDOWN_MS: 60 * 1000,
 
     /** 지원하는 지역 목록 */
-    SUPPORTED_DISTRICTS: ['강남구', '관악구', '영등포구'] as const,
+    SUPPORTED_DISTRICTS: ['대구시', '경산시'] as const,
 
     /** 투표방 생성 시 최소 장소 수 */
     MIN_PLACES_FOR_ROOM: 2,

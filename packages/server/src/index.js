@@ -6,11 +6,11 @@ require('dotenv').config();
 const { roomsRouter, parkingRouter, b2bRouter, placesRouter } = require('./routes');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors({
-  origin: ['https://babmoa-vote.vercel.app'],
+  origin: ['https://babmoa-vote.vercel.app', 'http://localhost:3000'],
   credentials: true
 }));
 app.use(express.json());
