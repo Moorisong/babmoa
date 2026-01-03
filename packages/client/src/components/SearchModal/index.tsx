@@ -37,6 +37,7 @@ export default function SearchModal({
     const [searching, setSearching] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('전체');
     const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
+    const [displayLimit, setDisplayLimit] = useState(10); // 페이징: 초기 10개 표시
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -49,6 +50,11 @@ export default function SearchModal({
             setTimeout(() => inputRef.current?.focus(), 100);
         }
     }, [isOpen, isInline]);
+
+    // 검색어나 필터가 변경되면 페이징 리셋
+    useEffect(() => {
+        setDisplayLimit(10);
+    }, [searchQuery, selectedCategory, selectedDistrict]);
 
     const performSearch = async (query: string) => {
         if (query.trim().length < 2) {
@@ -101,6 +107,10 @@ export default function SearchModal({
         }
         return true;
     });
+
+    // 페이징 적용: displayLimit만큼만 표시
+    const visibleResults = filteredResults.slice(0, displayLimit);
+    const hasMore = filteredResults.length > displayLimit;
 
     const handleSelectPlace = (place: KakaoPlace) => {
         if (addedPlaceIds.includes(place.placeId)) return;
@@ -185,39 +195,53 @@ export default function SearchModal({
                         <p className={styles.emptyText}>검색 결과가 없습니다</p>
                     </div>
                 ) : (
-                    filteredResults.map((place) => {
-                        const isAdded = addedPlaceIds.includes(place.placeId);
-                        return (
-                            <button
-                                key={place.placeId}
-                                onClick={() => handleSelectPlace(place)}
-                                disabled={isAdded}
-                                className={styles.resultItem}
-                            >
-                                <div className={styles.resultContent}>
-                                    <span className={styles.resultEmoji}>{getPlaceEmoji(place.category)}</span>
-                                    <div className={styles.resultInfo}>
-                                        <div className={styles.resultHeader}>
-                                            <p className={styles.resultName}>{place.name}</p>
-                                            {isAdded && <span className={styles.addedBadge}>추가됨</span>}
-                                        </div>
-                                        <p className={styles.resultAddress}>{place.address}</p>
-                                        <div className={styles.resultMeta}>
-                                            <span className={styles.resultCategory}>{place.category}</span>
-                                            {place.parkingInfo?.hasEnoughData && (
-                                                <span className={classNames(
-                                                    styles.parkingBadge,
-                                                    getParkingBadgeClass(place.parkingInfo.successRate)
-                                                )}>
-                                                    🅿️ {Math.round((place.parkingInfo.successRate || 0) * 100)}%
-                                                </span>
-                                            )}
+                    <>
+                        {visibleResults.map((place) => {
+                            const isAdded = addedPlaceIds.includes(place.placeId);
+                            return (
+                                <button
+                                    key={place.placeId}
+                                    onClick={() => handleSelectPlace(place)}
+                                    disabled={isAdded}
+                                    className={styles.resultItem}
+                                >
+                                    <div className={styles.resultContent}>
+                                        <span className={styles.resultEmoji}>{getPlaceEmoji(place.category)}</span>
+                                        <div className={styles.resultInfo}>
+                                            <div className={styles.resultHeader}>
+                                                <p className={styles.resultName}>{place.name}</p>
+                                                {isAdded && <span className={styles.addedBadge}>추가됨</span>}
+                                            </div>
+                                            <p className={styles.resultAddress}>{place.address}</p>
+                                            <div className={styles.resultMeta}>
+                                                <span className={styles.resultCategory}>{place.category}</span>
+                                                {place.parkingInfo?.hasEnoughData && (
+                                                    <span className={classNames(
+                                                        styles.parkingBadge,
+                                                        getParkingBadgeClass(place.parkingInfo.successRate)
+                                                    )}>
+                                                        🅿️ {Math.round((place.parkingInfo.successRate || 0) * 100)}%
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </button>
+                            );
+                        })}
+
+                        {hasMore && (
+                            <button
+                                onClick={() => setDisplayLimit(prev => prev + 10)}
+                                className={styles.loadMoreBtn}
+                            >
+                                <span>더보기</span>
+                                <span className={styles.loadMoreCount}>
+                                    ({visibleResults.length} / {filteredResults.length})
+                                </span>
                             </button>
-                        );
-                    })
+                        )}
+                    </>
                 )}
             </div>
         </>

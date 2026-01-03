@@ -245,6 +245,35 @@
     color: #b91c1c;
 }
 
+.loadMoreBtn {
+    width: 100%;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6366f1;
+    transition: all 0.2s;
+}
+
+.loadMoreBtn:hover {
+    background-color: #eef2ff;
+    border-color: #6366f1;
+}
+
+.loadMoreCount {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+
 .backdrop {
     position: fixed;
     inset: 0;
