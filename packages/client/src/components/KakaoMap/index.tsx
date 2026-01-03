@@ -54,8 +54,10 @@ const DISTRICT_CONFIG = {
 };
 
 const DISTRICT_BOUNDS = {
-    '대구시': { south: 35.80, north: 35.93, west: 128.52, east: 128.68 },
-    '경산시': { south: 35.79, north: 35.88, west: 128.70, east: 128.80 },
+    // 주소 기반 필터링을 사용하므로 경계를 넓게 설정
+    // 실제 필터링은 주소에 "대구" 또는 "경산"이 포함되는지로 판단
+    '대구시': { south: 35.60, north: 36.02, west: 128.35, east: 128.80 },
+    '경산시': { south: 35.75, north: 35.92, west: 128.68, east: 128.85 },
 };
 
 const isInDistrict = (lat: number, lng: number, bounds: { south: number; north: number; west: number; east: number }): boolean => {
@@ -126,11 +128,16 @@ export default function KakaoMap({ district, onMarkerClick, focusCoords }: Kakao
         const displayMarkers = () => {
             setSearchingPlaces(false);
 
-            // 선택된 구의 경계 내에만 있는 장소만 필터링
+            // 주소 기반으로 필터링 (좌표가 아닌 행정구역 기준)
+            const districtKeywords: Record<string, string[]> = {
+                '대구시': ['대구', '대구광역시'],
+                '경산시': ['경산', '경산시']
+            };
+
+            const keywords = districtKeywords[currentDistrict] || [];
             const filteredResults = allPlaces.filter(place => {
-                const placeLat = parseFloat(place.y);
-                const placeLng = parseFloat(place.x);
-                return isInDistrict(placeLat, placeLng, currentDistrictBounds);
+                const address = place.road_address_name || place.address_name;
+                return keywords.some(keyword => address.includes(keyword));
             });
 
             if (filteredResults.length === 0) {
@@ -258,16 +265,18 @@ export default function KakaoMap({ district, onMarkerClick, focusCoords }: Kakao
             searchTimeoutRef.current = null;
         }
 
-        // 기존 마커 제거 및 상태 초기화
+        // 기존 마커 제거 및 검색 상태 초기화
         clearMarkers();
         setSearchingPlaces(false);
-        setIsOutOfBounds(false);
 
         const config = DISTRICT_CONFIG[district];
         const center = new window.kakao.maps.LatLng(config.lat, config.lng);
 
-        // 지역이 실제로 변경된 경우에만 지도 이동 (focusCoords와 충돌 방지)
+        // 지역이 실제로 변경된 경우에만 지도 이동 및 상태 리셋
         if (prevDistrictRef.current !== district) {
+            // 실제 district 변경 시에만 isOutOfBounds 리셋 (focusCoords 변경 시에는 리셋하지 않음)
+            setIsOutOfBounds(false);
+
             // focusCoords가 설정되어 있으면 중심 이동 스킵 (어차피 곧 특정 위치로 포커스됨)
             if (!focusCoords) {
                 mapInstanceRef.current.panTo(center);
