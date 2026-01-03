@@ -14,7 +14,7 @@ import type {
 // 타입 re-export (하위 호환성)
 export type { ParkingInfo, KakaoPlace, PlaceSearchOptions };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {

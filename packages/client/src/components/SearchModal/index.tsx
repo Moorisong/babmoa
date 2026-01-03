@@ -16,7 +16,13 @@ interface SearchModalProps {
 }
 
 const CATEGORIES = ['전체', '한식', '중식', '일식', '양식', '고기', '해산물', '분식', '카페', '술집'];
-const DISTRICTS = ['강남구', '관악구', '영등포구'];
+const DISTRICTS = ['대구시', '경산시'];
+
+// 주소 매칭용 키워드
+const DISTRICT_ADDRESS_KEYWORDS: Record<string, string[]> = {
+    '대구시': ['대구', '대구광역시'],
+    '경산시': ['경산']
+};
 
 export default function SearchModal({
     isOpen,
@@ -83,8 +89,10 @@ export default function SearchModal({
     }, [searchQuery]);
 
     const filteredResults = searchResults.filter(place => {
-        if (selectedDistrict && !place.address.includes(selectedDistrict)) {
-            return false;
+        if (selectedDistrict) {
+            const keywords = DISTRICT_ADDRESS_KEYWORDS[selectedDistrict] || [selectedDistrict];
+            const addressMatches = keywords.some(keyword => place.address.includes(keyword));
+            if (!addressMatches) return false;
         }
         if (selectedCategory !== '전체') {
             if (!place.category?.includes(selectedCategory) && !place.categoryDetail?.includes(selectedCategory)) {

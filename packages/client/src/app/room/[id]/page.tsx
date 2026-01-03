@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import RoomClient from './RoomClient';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://babmoa-vote.vercel.app';
 
 // 서버 사이드에서 투표방 정보 조회

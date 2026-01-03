@@ -2,7 +2,7 @@
  * 카카오맵 API 서비스
  * 장소 검색 및 상세 정보 조회
  * 캐싱 적용
- * 지원 지역: 관악구, 영등포구, 강남구
+ * 지원 지역: 대구시, 경산시
  */
 
 const { cacheService } = require('./cacheService');
@@ -25,20 +25,28 @@ const CATEGORY_MAP = {
 };
 
 // 지원 지역 설정
-const SUPPORTED_DISTRICTS = ['관악구', '영등포구', '강남구'];
+const SUPPORTED_DISTRICTS = ['대구시', '경산시'];
+
+// 주소 매칭용 키워드 (카카오 API 주소 형식에 맞춤)
+const DISTRICT_ADDRESS_KEYWORDS = {
+    '대구시': ['대구', '대구광역시'],
+    '경산시': ['경산']
+};
+
+// 검색 시 사용할 지역명 (UI 표시명 -> 검색용 키워드)
+const DISTRICT_SEARCH_KEYWORD = {
+    '대구시': '대구',
+    '경산시': '경산'
+};
 
 const DISTRICT_CONFIG = {
-    '관악구': {
-        center: { x: '126.9516', y: '37.4783' },
-        keywords: ['관악', '신림', '봉천', '서울대', '낙성대']
+    '대구시': {
+        center: { x: '128.6014', y: '35.8714' },
+        keywords: ['대구', '동성로', '중구', '수성구', '달서구', '북구', '동구', '서구', '남구', '반월당', '김광석']
     },
-    '영등포구': {
-        center: { x: '126.9101', y: '37.5261' },
-        keywords: ['영등포', '여의도', '당산', '문래', '신길']
-    },
-    '강남구': {
-        center: { x: '127.0276', y: '37.4979' },
-        keywords: ['강남', '역삼', '삼성', '논현', '청담', '압구정', '선릉', '코엑스']
+    '경산시': {
+        center: { x: '128.7411', y: '35.8247' },
+        keywords: ['경산', '하양', '압량', '영남대']
     }
 };
 
@@ -127,11 +135,12 @@ async function searchPlaces(keyword, options = {}) {
             return cached;
         }
 
-        // 3개 지역 동시 검색
+        // 2개 지역 동시 검색
         const allDocs = [];
         const searchPromises = SUPPORTED_DISTRICTS.map(async (districtName) => {
             const config = DISTRICT_CONFIG[districtName];
-            const districtSearchKeyword = `${districtName} ${baseKeyword}`;
+            const searchKeyword = DISTRICT_SEARCH_KEYWORD[districtName] || districtName;
+            const districtSearchKeyword = `${searchKeyword} ${baseKeyword}`;
 
             try {
                 const data = await callKakaoApi('/search/keyword.json', {
@@ -157,7 +166,10 @@ async function searchPlaces(keyword, options = {}) {
         const filteredDocs = allDocs.filter(doc => {
             if (!foodCategories.includes(doc.category_group_name)) return false;
             const address = doc.road_address_name || doc.address_name || '';
-            return SUPPORTED_DISTRICTS.some(d => address.includes(d));
+            return SUPPORTED_DISTRICTS.some(district => {
+                const keywords = DISTRICT_ADDRESS_KEYWORDS[district] || [district];
+                return keywords.some(keyword => address.includes(keyword));
+            });
         });
 
         // 중복 제거 (slice 제거 - 전체 결과 반환)
@@ -193,10 +205,11 @@ async function searchPlaces(keyword, options = {}) {
     // 특정 지역구 검색
     const districtConfig = DISTRICT_CONFIG[targetDistrict];
     const centerCoords = districtConfig.center;
+    const districtSearchKeyword = DISTRICT_SEARCH_KEYWORD[targetDistrict] || targetDistrict;
     let searchKeyword = baseKeyword;
 
-    if (!keyword.includes(targetDistrict)) {
-        searchKeyword = `${targetDistrict} ${baseKeyword}`;
+    if (!keyword.includes(targetDistrict) && !keyword.includes(districtSearchKeyword)) {
+        searchKeyword = `${districtSearchKeyword} ${baseKeyword}`;
     }
 
     const cacheKey = cacheService.getSearchCacheKey(
@@ -226,7 +239,10 @@ async function searchPlaces(keyword, options = {}) {
     const filteredDocs = data.documents.filter(doc => {
         if (!foodCategories.includes(doc.category_group_name)) return false;
         const address = doc.road_address_name || doc.address_name || '';
-        return SUPPORTED_DISTRICTS.some(d => address.includes(d));
+        return SUPPORTED_DISTRICTS.some(district => {
+            const keywords = DISTRICT_ADDRESS_KEYWORDS[district] || [district];
+            return keywords.some(keyword => address.includes(keyword));
+        });
     });
 
     const seen = new Set();

@@ -36,7 +36,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
 
-  const [selectedDistrict, setSelectedDistrict] = useState<District>('강남구');
+  const [selectedDistrict, setSelectedDistrict] = useState<District>('대구시');
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -71,9 +71,16 @@ export default function HomePage() {
       return;
     }
 
-    const isSupported = CONFIG.SUPPORTED_DISTRICTS.some(district =>
-      kakaoPlace.address.includes(district)
-    );
+    // 주소 매칭용 키워드 (카카오 API 주소 형식에 맞춤)
+    const districtKeywords: Record<string, string[]> = {
+      '대구시': ['대구', '대구광역시'],
+      '경산시': ['경산']
+    };
+
+    const isSupported = CONFIG.SUPPORTED_DISTRICTS.some(district => {
+      const keywords = districtKeywords[district] || [district];
+      return keywords.some(keyword => kakaoPlace.address.includes(keyword));
+    });
 
     if (!isSupported) {
       showToast(`현재 ${CONFIG.SUPPORTED_DISTRICTS.join(', ')}만 지원합니다`);
@@ -202,7 +209,7 @@ export default function HomePage() {
       <main className={styles.main}>
         <div className={styles.hero}>
           <h1 className={styles.heroTitle}>
-            <span className={styles.heroGradient}>서울 3개구</span>
+            <span className={styles.heroGradient}>대구+경산</span>
             <span> 오늘의 회식 PICK</span>
           </h1>
           <p className={styles.heroSubtitle}>
@@ -240,7 +247,6 @@ export default function HomePage() {
 
           <div className={styles.mapContainer}>
             <KakaoMap
-              key={selectedDistrict}
               district={selectedDistrict}
               onMarkerClick={handleMarkerClick}
               focusCoords={focusCoords}
@@ -293,7 +299,20 @@ export default function HomePage() {
                   style={{ animationDelay: `${index * 0.05}s` }}
                   onClick={() => {
                     if (place.x && place.y) {
-                      setFocusCoords({ x: place.x, y: place.y });
+                      // 주소 기반으로 지역 자동 변경
+                      const districtKeywords: Record<string, string[]> = {
+                        '대구시': ['대구', '대구광역시'],
+                        '경산시': ['경산']
+                      };
+
+                      let targetDistrict: District | null = null;
+                      for (const [district, keywords] of Object.entries(districtKeywords)) {
+                        if (keywords.some(keyword => place.address.includes(keyword))) {
+                          targetDistrict = district as District;
+                          break;
+                        }
+                      }
+
                       const kakaoPlace: KakaoPlace = {
                         placeId: place.placeId,
                         name: place.name,
@@ -305,8 +324,21 @@ export default function HomePage() {
                         y: place.y,
                         parkingInfo: null,
                       };
-                      setSelectedPlace(kakaoPlace);
-                      setIsBottomSheetOpen(true);
+
+                      // 지역 변경이 필요한 경우
+                      if (targetDistrict && targetDistrict !== selectedDistrict) {
+                        // 먼저 focusCoords 설정 (District useEffect에서 이를 감지하여 중심 이동 스킵)
+                        setFocusCoords({ x: place.x, y: place.y });
+                        // 그 다음 지역 변경
+                        setSelectedDistrict(targetDistrict);
+                        setSelectedPlace(kakaoPlace);
+                        setIsBottomSheetOpen(true);
+                      } else {
+                        // 같은 지역이면 즉시 포커스
+                        setFocusCoords({ x: place.x, y: place.y });
+                        setSelectedPlace(kakaoPlace);
+                        setIsBottomSheetOpen(true);
+                      }
                     }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}

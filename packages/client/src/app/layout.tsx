@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
   description: "팀 회식 장소를 빠르게 정해보세요. 실제 방문 기록 기반 주차 정보까지!",
   metadataBase: new URL('https://babmoa-vote.vercel.app'),
-  keywords: ["회식", "투표", "장소 추천", "팀 회식", "관악구 맛집", "영등포구 맛집", "강남구 맛집", "주차 정보", "밥모아"],
+  keywords: ["회식", "투표", "장소 추천", "팀 회식", "대구 맛집", "경산 맛집", "주차 정보", "밥모아"],
   authors: [{ name: "밥모아" }],
   creator: "밥모아",
   openGraph: {
