@@ -12,5 +12,7 @@ export const API = {
     PLACES_SEARCH: '/places/search',
     PLACES_CATEGORIES: '/places/categories',
     PLACES_DISTRICT: (district: string) => `/places/district/${encodeURIComponent(district)}`,
+    PLACES_REGION_STATUS: (regionId: string) => `/places/region-status?regionId=${encodeURIComponent(regionId)}`,
+    PLACES_BULK_INFO: '/places/bulk-info',
 } as const;
 

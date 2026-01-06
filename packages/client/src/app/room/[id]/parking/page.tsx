@@ -7,7 +7,7 @@ import { Header, ParkingForm } from '@/components';
 import { ROUTES } from '@/constants';
 import { roomsApi, parkingApi } from '@/lib/api';
 import type { Room, TimeSlot } from '@/types';
-import { getParticipantId, hasRecordedParking, setRecordedParking, getTimeSlotFromDeadline } from '@/lib/utils';
+import { getParticipantId, hasRecordedParking, setRecordedParking, getTimeSlotFromDeadline, extractRegionFromAddress } from '@/lib/utils';
 import styles from './page.module.css';
 
 const TIME_SLOT_OPTIONS: { value: TimeSlot; label: string; emoji: string }[] = [
@@ -66,6 +66,7 @@ export default function ParkingPage() {
                 parkingExperience: data.parkingExperience,
                 date: new Date().toISOString(),
                 timeSlot: selectedTimeSlot,
+                regionId: extractRegionFromAddress(winnerPlace?.address || ''),
             });
 
             if (result.success) {
