@@ -13,10 +13,10 @@ const { RegionState, ParkingData } = require('../models');
  */
 
 const PROMOTION_THRESHOLDS = {
-    totalRecords: 120,
-    uniqueParticipants: 40,
+    totalRecords: 300,
+    uniqueParticipants: 80,
     timeSlotCount: 3,
-    daysSinceFirstRecord: 30
+    daysSinceFirstRecord: 60
 };
 
 /**
@@ -96,7 +96,7 @@ function meetsPromotionCriteria(metrics) {
 }
 
 /**
- * 1일 1회 배치 작업: 모든 지역 집계 및 자동 승격
+ * 1일 1회 배치 작업: 모든 지역 집계 및 자동 승격 (OPEN -> CANDIDATE)
  * @returns {Promise<Array>} 승격된 지역 목록
  */
 async function runRegionAggregation() {
@@ -125,18 +125,19 @@ async function runRegionAggregation() {
                 { upsert: true, new: true }
             );
 
-            // 이미 CORE면 스킵
-            if (regionState.status === 'CORE') continue;
+            // 이미 CORE거나 CANDIDATE면 스킵 (자동 승격은 OPEN -> CANDIDATE만 수행)
+            // * CORE 승격은 운영자 수동 결정
+            if (regionState.status !== 'OPEN') continue;
 
             // 승격 조건 확인
             if (meetsPromotionCriteria(metrics)) {
-                // CORE로 승격
-                regionState.status = 'CORE';
+                // CANDIDATE로 승격
+                regionState.status = 'CANDIDATE';
                 regionState.promotedAt = new Date();
                 await regionState.save();
 
                 // Promotion Audit Log
-                console.log('[RegionService] PROMOTION AUDIT LOG:', {
+                console.log('[RegionService] PROMOTION AUDIT LOG (OPEN -> CANDIDATE):', {
                     regionId,
                     promotedAt: regionState.promotedAt,
                     metrics: {
@@ -150,12 +151,6 @@ async function runRegionAggregation() {
                 });
 
                 promotedRegions.push(regionId);
-            } else if (regionState.status === 'OPEN') {
-                // CANDIDATE로 변경 (일부 조건 충족 시)
-                if (metrics.totalParkingRecords >= 50) {
-                    regionState.status = 'CANDIDATE';
-                    await regionState.save();
-                }
             }
         } catch (error) {
             console.error(`[RegionService] Error processing region ${regionId}:`, error);

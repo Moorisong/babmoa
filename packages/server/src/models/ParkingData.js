@@ -20,7 +20,7 @@ const parkingDataSchema = new mongoose.Schema({
     },
     timeSlot: {
         type: String,
-        enum: ['평일_점심', '평일_저녁', '주말'],
+        enum: ['평일_점심', '평일_저녁', '주말_및_휴일'],
         required: true
     },
     parkingAvailable: {
