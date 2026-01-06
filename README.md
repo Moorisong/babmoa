@@ -2,16 +2,16 @@
 
 > 🍽️ 팀 회식 장소 투표 & 주차 정보 공유 서비스
 
-회식 장소 선정의 번거로움을 해결하는 웹 서비스입니다.
+회식 장소 선정의 번거로움을 해결하는 웹 서비스입니다. 전국 어디서나 검색하여 투표를 만들 수 있으며, 특정 지역의 상세한 주차 입지 분석 정보를 제공합니다.
 
 ---
 
 ## 📌 주요 기능
 
 ### 🗺️ 지도 기반 장소 선택
-- **카카오맵 통합**: 지도에서 직접 마커 클릭으로 후보 장소 선택
-- **지역 필터**: 강남구, 관악구, 영등포구 지원
-- **검색 추가**: 검색으로 원하는 식당 직접 추가
+- **카카오맵 통합**: 지도에서 전국 모든 장소 검색 및 선택 가능
+- **전국 검색**: "서울 맛집", "부산 카페" 등 지역 제한 없는 자유로운 검색
+- **주차 정보**: 특정 지역은 상세 주차 분석 데이터 제공 (CORE_REGION)
 
 ### 🗳️ 회식 투표
 - **간편한 투표 생성**: 제목, 후보 장소, 마감 시간 설정
@@ -20,11 +20,11 @@
 - **"상관없음" 옵션**: 투표자가 패스 가능 (옵션)
 - **자동 마감**: 설정한 마감 시간에 투표 자동 종료
 
-### 🅿️ 주차 정보
-- **사용자 참여 기반**: 실제 방문자가 남긴 주차 경험 데이터
-- **주차 뱃지**: 주차 수월 / 애매함 / 거의 불가 표시
-- **성공률 표시**: 주차 성공률 및 방문 횟수 통계
-- **시간대별 분석**: 평일 점심, 평일 저녁, 주말 구분
+### 🅿️ 주차 정보 (CORE_REGION)
+- **주차 뱃지**: 특정 지역 마커에 주차 상태 표시 (수월/애매/불가)
+- **성공률 통계**: 실제 주차 시도 대비 성공률, 시간대별(점심/저녁/주말) 분석
+- **하이브리드 판별**: 서버 API 확인 전, 주소 기반으로 즉시 지역 상태를 감지하여 빠른 UX 제공
+- **데이터 기반**: 운영자가 검증하고 승인한 지역(CORE)만 신뢰성 있는 정보 노출
 
 ### 🔗 공유 기능
 - **네이티브 공유**: 모바일에서 카카오톡 등 앱 공유
@@ -41,7 +41,7 @@
 
 | 영역 | 기술 |
 |------|------|
-| **Frontend** | Next.js 15, React 19, TypeScript, CSS Modules |
+| **Frontend** | Next.js 15, React, TypeScript, CSS Modules |
 | **Backend** | Node.js, Express |
 | **Database** | MongoDB |
 | **External API** | Kakao Maps API (서버 전용) |
@@ -90,11 +90,11 @@ npm install
 
 # 환경 변수 설정
 # packages/client/.env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+NEXT_PUBLIC_API_URL=http://localhost:5001/api
 NEXT_PUBLIC_KAKAO_JS_KEY=your_kakao_js_key
 
 # packages/server/.env
-PORT=5000
+PORT=5001
 MONGODB_URI=mongodb://localhost:27017/babmoa
 KAKAO_REST_API_KEY=your_kakao_rest_api_key
 ```
@@ -110,7 +110,7 @@ npm run dev:client
 ```
 
 - Frontend: http://localhost:3000
-- Backend: http://localhost:5000
+- Backend: http://localhost:5001
 
 ---
 
@@ -137,17 +137,14 @@ npm run dev:client
 | POST | `/api/rooms/:id/vote` | 투표하기 |
 | GET | `/api/rooms/:id/results` | 투표 결과 조회 |
 
-### 주차
+### 주차 & 장소
 | Method | Endpoint | 설명 |
 |--------|----------|------|
 | POST | `/api/parking` | 주차 경험 기록 |
 | GET | `/api/parking/:placeId/stats` | 장소별 주차 통계 |
-
-### 장소
-| Method | Endpoint | 설명 |
-|--------|----------|------|
-| GET | `/api/places/search` | 장소 검색 (카카오맵) |
-| GET | `/api/places/district/:district` | 지역별 장소 목록 |
+| GET | `/api/places/search` | 장소 검색 (전국) |
+| POST | `/api/places/bulk-info` | 다중 장소 상세 정보 (주차/지역 상태) |
+| GET | `/api/places/region-status` | 지역 상태 조회 |
 
 ---
 
@@ -159,6 +156,7 @@ npm run dev:client
 | Vote | 투표 기록 | 영구 |
 | ParkingData | 주차 경험 (원본) | 1년 (TTL) |
 | ParkingStats | 주차 통계 (집계) | 영구 |
+| RegionState | 지역별 승격 상태 관리 | 영구 |
 
 ---
 
@@ -167,6 +165,5 @@ npm run dev:client
 - **익명 참여**: 모든 기능은 로그인 없이 사용 가능
 - **1인 1표**: participantId + roomId 조합으로 중복 방지
 - **서버 API 호출**: 카카오 API는 서버에서만 호출
-- **데이터 신뢰도**: 주차 기록 3건 이상일 때만 성공률 표시
-- **지역 제한**: 현재 강남구, 관악구, 영등포구만 지원
-
+- **데이터 신뢰도**: 주차 기록이 충분히 쌓인(120건+) 지역만 CORE_REGION으로 승격
+- **전국 서비스**: 투표 생성은 전국 어디서나 가능, 주차 정보만 CORE 지역 한정 제공
