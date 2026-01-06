@@ -11,18 +11,10 @@ interface SearchModalProps {
     onClose: () => void;
     onSelectPlace: (place: KakaoPlace) => void;
     addedPlaceIds: string[];
-    selectedDistrict: string | null;
     isInline?: boolean;
 }
 
 const CATEGORIES = ['전체', '한식', '중식', '일식', '양식', '고기', '해산물', '분식', '카페', '술집'];
-const DISTRICTS = ['대구시', '경산시'];
-
-// 주소 매칭용 키워드
-const DISTRICT_ADDRESS_KEYWORDS: Record<string, string[]> = {
-    '대구시': ['대구', '대구광역시'],
-    '경산시': ['경산']
-};
 
 export default function SearchModal({
     isOpen,
@@ -36,7 +28,6 @@ export default function SearchModal({
     const [searchResults, setSearchResults] = useState<KakaoPlace[]>([]);
     const [searching, setSearching] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('전체');
-    const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
     const [displayLimit, setDisplayLimit] = useState(10); // 페이징: 초기 10개 표시
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -54,7 +45,7 @@ export default function SearchModal({
     // 검색어나 필터가 변경되면 페이징 리셋
     useEffect(() => {
         setDisplayLimit(10);
-    }, [searchQuery, selectedCategory, selectedDistrict]);
+    }, [searchQuery, selectedCategory]);
 
     const performSearch = async (query: string) => {
         if (query.trim().length < 2) {
@@ -95,11 +86,6 @@ export default function SearchModal({
     }, [searchQuery]);
 
     const filteredResults = searchResults.filter(place => {
-        if (selectedDistrict) {
-            const keywords = DISTRICT_ADDRESS_KEYWORDS[selectedDistrict] || [selectedDistrict];
-            const addressMatches = keywords.some(keyword => place.address.includes(keyword));
-            if (!addressMatches) return false;
-        }
         if (selectedCategory !== '전체') {
             if (!place.category?.includes(selectedCategory) && !place.categoryDetail?.includes(selectedCategory)) {
                 return false;
@@ -120,12 +106,7 @@ export default function SearchModal({
         }
     };
 
-    const getParkingBadgeClass = (successRate: number | null) => {
-        if (successRate === null) return styles.parkingDanger;
-        if (successRate >= 0.7) return styles.parkingSuccess;
-        if (successRate >= 0.4) return styles.parkingWarning;
-        return styles.parkingDanger;
-    };
+
 
     const getPlaceEmoji = (category: string) => {
         if (category === '음식점') return '🍽️';
@@ -158,18 +139,6 @@ export default function SearchModal({
             </div>
 
             <div className={isInline ? styles.filtersSection : styles.filtersModal}>
-                <div className={styles.districtFilters}>
-                    {DISTRICTS.map((district) => (
-                        <button
-                            key={district}
-                            onClick={() => setSelectedDistrict(selectedDistrict === district ? null : district)}
-                            className={selectedDistrict === district ? styles.filterBtnActive : styles.filterBtnInactive}
-                        >
-                            📍 {district}
-                        </button>
-                    ))}
-                </div>
-
                 <div className={styles.categoryFilters}>
                     {CATEGORIES.map((cat) => (
                         <button
@@ -215,14 +184,6 @@ export default function SearchModal({
                                             <p className={styles.resultAddress}>{place.address}</p>
                                             <div className={styles.resultMeta}>
                                                 <span className={styles.resultCategory}>{place.category}</span>
-                                                {place.parkingInfo?.hasEnoughData && (
-                                                    <span className={classNames(
-                                                        styles.parkingBadge,
-                                                        getParkingBadgeClass(place.parkingInfo.successRate)
-                                                    )}>
-                                                        🅿️ {Math.round((place.parkingInfo.successRate || 0) * 100)}%
-                                                    </span>
-                                                )}
                                             </div>
                                         </div>
                                     </div>

@@ -13,6 +13,9 @@ export interface ParkingInfo {
     hasEnoughData: boolean;
 }
 
+// 지역 상태: OPEN(수집 전) → CANDIDATE(수집 중) → CORE(공개)
+export type RegionStatus = 'OPEN' | 'CANDIDATE' | 'CORE';
+
 export interface Place {
     placeId: string;
     name: string;
@@ -28,6 +31,7 @@ export interface KakaoPlace extends Place {
     phone: string;
     x: string;
     y: string;
+    regionStatus?: RegionStatus;  // 지역 상태 (OPEN/CANDIDATE/CORE)
 }
 
 // ========================================

@@ -9,6 +9,7 @@ import type {
     DistrictPlacesMeta,
     Room,
     VoteResult,
+    RegionStatus,
 } from '@/types';
 
 // 타입 re-export (하위 호환성)
@@ -73,6 +74,7 @@ export const parkingApi = {
         parkingExperience: string | null;
         date: string;
         timeSlot: string;
+        regionId?: string | null;
     }) => fetchApi<{ recorded: boolean }>(API.PARKING, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -106,4 +108,15 @@ export const placesApi = {
         places: KakaoPlace[];
         meta: DistrictPlacesMeta;
     }>(API.PLACES_DISTRICT(district)),
+
+    getRegionStatus: (regionId: string) => fetchApi<{
+        regionStatus: RegionStatus;
+    }>(API.PLACES_REGION_STATUS(regionId)),
+
+    getBulkInfo: (places: Array<{ placeId: string; address: string }>) => fetchApi<{
+        results: Array<{ placeId: string; regionStatus: RegionStatus; parkingInfo?: { hasParking: boolean; successRate: number | null; badge: string | null } }>;
+    }>(API.PLACES_BULK_INFO, {
+        method: 'POST',
+        body: JSON.stringify({ places }),
+    }),
 };

@@ -1,5 +1,6 @@
 const kakaoMapService = require('../services/kakaoMapService');
 const ParkingStats = require('../models/ParkingStats');
+const { getRegionStatus: fetchRegionStatus } = require('../services/regionService');
 const { CONFIG, ERROR_CODES } = require('../constants');
 const { getCurrentTimeSlot } = require('../utils');
 
@@ -211,6 +212,108 @@ exports.getPlacesByDistrict = async (req, res) => {
 
     } catch (error) {
         console.error('getPlacesByDistrict error:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: ERROR_CODES.SERVER_ERROR, message: error.message || '서버 오류가 발생했습니다' }
+        });
+    }
+};
+
+// GET /api/places/region-status - 지역 상태 조회
+// regionId: 주소 기반 행정구역 ID (예: "대구광역시 수성구")
+exports.getRegionStatus = async (req, res) => {
+    try {
+        const { regionId } = req.query;
+
+        if (!regionId) {
+            return res.json({
+                success: true,
+                data: { regionStatus: 'OPEN' }  // 기본값
+            });
+        }
+
+        const status = await fetchRegionStatus(regionId);
+
+        res.json({
+            success: true,
+            data: { regionStatus: status }
+        });
+    } catch (error) {
+        console.error('getRegionStatus error:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: ERROR_CODES.SERVER_ERROR, message: error.message || '서버 오류가 발생했습니다' }
+        });
+    }
+};
+
+// POST /api/places/bulk-info - 여러 장소의 목록 정보 조회 (주차/지역 상태)
+// body: { places: [{ placeId, address }] }
+exports.getBulkPlacesInfo = async (req, res) => {
+    try {
+        const { places } = req.body;
+
+        if (!places || !Array.isArray(places)) {
+            return res.status(400).json({
+                success: false,
+                error: { code: ERROR_CODES.INVALID_REQUEST, message: '잘못된 요청 형식입니다' }
+            });
+        }
+
+        const currentTimeSlot = getCurrentTimeSlot();
+        const placeIds = places.map(p => p.placeId);
+
+        // 1. 주차 통계 조회
+        const parkingStats = await ParkingStats.find({
+            placeId: { $in: placeIds },
+            timeSlot: currentTimeSlot
+        });
+
+        const statsMap = new Map();
+        parkingStats.forEach(stat => {
+            const hasEnoughData = stat.totalAttempts >= CONFIG.MIN_PARKING_RECORDS;
+            statsMap.set(stat.placeId, {
+                hasParking: stat.successCount > 0,
+                successRate: hasEnoughData ? stat.successRate : null,
+                badge: hasEnoughData ? 'P' : null
+            });
+        });
+
+        // 2. 결과 조합 - regionStatus에 따라 parkingInfo 포함 여부 결정
+        const { extractRegionFromAddress } = require('../utils');
+
+        const results = await Promise.all(places.map(async (place) => {
+            const regionId = extractRegionFromAddress(place.address);
+            const status = await fetchRegionStatus(regionId); // 'OPEN', 'CANDIDATE', 'CORE'
+            const stats = statsMap.get(place.placeId);
+
+            // CORE_REGION만 parkingInfo 포함, 그 외는 필드 자체 제거 (null 포함 금지)
+            if (status === 'CORE' && stats) {
+                return {
+                    placeId: place.placeId,
+                    regionStatus: status,
+                    parkingInfo: {
+                        hasParking: stats.hasParking,
+                        successRate: stats.successRate,
+                        badge: stats.badge
+                    }
+                };
+            }
+
+            // OPEN/CANDIDATE는 parkingInfo 필드 없음
+            return {
+                placeId: place.placeId,
+                regionStatus: status
+            };
+        }));
+
+        res.json({
+            success: true,
+            results
+        });
+
+    } catch (error) {
+        console.error('getBulkPlacesInfo error:', error);
         res.status(500).json({
             success: false,
             error: { code: ERROR_CODES.SERVER_ERROR, message: error.message || '서버 오류가 발생했습니다' }

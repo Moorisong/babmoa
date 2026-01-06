@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import classNames from 'classnames';
 import { KakaoPlace } from '@/lib/api';
+import { isCoreRegionByAddress } from '@/lib/utils';
+import type { RegionStatus } from '@/types';
 import styles from './PlaceBottomSheet.module.css';
 
 interface PlaceBottomSheetProps {
@@ -11,6 +13,7 @@ interface PlaceBottomSheetProps {
     onClose: () => void;
     onAddPlace: (place: KakaoPlace) => void;
     isAlreadyAdded: boolean;
+    regionStatus?: RegionStatus;  // 지역 상태 (CORE만 주차 정보 표시)
 }
 
 function getParkingBadge(place: KakaoPlace) {
@@ -34,8 +37,14 @@ export default function PlaceBottomSheet({
     isOpen,
     onClose,
     onAddPlace,
-    isAlreadyAdded
+    isAlreadyAdded,
+    regionStatus  // 기본값 제거, 주소 기반 판별 사용
 }: PlaceBottomSheetProps) {
+    // 실제 적용할 지역 상태: prop이 CORE면 CORE, 아니면 주소 기반 판별
+    const effectiveRegionStatus: RegionStatus =
+        regionStatus === 'CORE'
+            ? 'CORE'
+            : (place && isCoreRegionByAddress(place.address) ? 'CORE' : 'OPEN');
     const [dragY, setDragY] = useState(0);
     const isDraggingRef = useRef(false);
     const startYRef = useRef(0);
@@ -164,22 +173,30 @@ export default function PlaceBottomSheet({
                             <span className={styles.referenceTag}>참고용</span>
                         </div>
 
-                        <div className={styles.parkingBadgeRow}>
-                            <span className={classNames(styles.parkingBadge, getParkingBadgeClass())}>
-                                {parkingBadge.emoji} {parkingBadge.label}
-                            </span>
+                        {effectiveRegionStatus === 'CORE' ? (
+                            <>
+                                <div className={styles.parkingBadgeRow}>
+                                    <span className={classNames(styles.parkingBadge, getParkingBadgeClass())}>
+                                        {parkingBadge.emoji} {parkingBadge.label}
+                                    </span>
 
-                            {place.parkingInfo?.hasEnoughData && (
-                                <span className={styles.parkingStats}>
-                                    성공률 {Math.round((place.parkingInfo.successRate || 0) * 100)}% ·
-                                    방문자 {place.parkingInfo.recordCount}명 기준
-                                </span>
-                            )}
-                        </div>
+                                    {place.parkingInfo?.hasEnoughData && (
+                                        <span className={styles.parkingStats}>
+                                            성공률 {Math.round((place.parkingInfo.successRate || 0) * 100)}% ·
+                                            방문자 {place.parkingInfo.recordCount}명 기준
+                                        </span>
+                                    )}
+                                </div>
 
-                        {!place.parkingInfo?.hasEnoughData && (
+                                {!place.parkingInfo?.hasEnoughData && (
+                                    <p className={styles.parkingHint}>
+                                        아직 주차 기록이 충분하지 않아요. 방문 후 기록해주세요!
+                                    </p>
+                                )}
+                            </>
+                        ) : (
                             <p className={styles.parkingHint}>
-                                아직 주차 기록이 충분하지 않아요. 방문 후 기록해주세요!
+                                주차 정보는 실제 방문 기록을 기반으로 제공되며, 지역 및 장소에 따라 표시되지 않을 수 있습니다.
                             </p>
                         )}
                     </div>

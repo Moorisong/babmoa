@@ -156,6 +156,18 @@
     color: #ef4444;
 }
 
+/* Parking Disclaimer - 고정 안내 문구 */
+.parkingDisclaimer {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-align: center;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    line-height: 1.5;
+}
+
 /* Search Toggle */
 .searchToggle {
     width: 100%;
