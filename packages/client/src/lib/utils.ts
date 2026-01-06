@@ -261,3 +261,37 @@ export function getTimeRemaining(deadline: string): string {
 
     return `${seconds}초 남음`;
 }
+
+/**
+ * 주소에서 행정구역 ID 추출 (예: "대구광역시 수성구", "경북 경산시")
+ * @param address 전체 주소
+ */
+export function extractRegionFromAddress(address: string): string | null {
+    if (!address) return null;
+
+    // 공백으로 분리하여 앞 2단어 추출
+    const parts = address.split(' ');
+    if (parts.length < 2) return null;
+
+    // "대구광역시 수성구", "경상북도 경산시" 등
+    return `${parts[0]} ${parts[1]}`;
+}
+
+// ========================================
+// 지역 상태 판별
+// ========================================
+
+// CORE_REGION 주소 키워드 (대구·경산)
+const CORE_REGION_KEYWORDS = ['대구', '대구광역시', '경산'];
+
+/**
+ * 주소 기반으로 CORE_REGION 여부 판별
+ * 서버에서 regionStatus를 받지 못한 경우 클라이언트에서 판별용
+ * @param address 장소 주소
+ * @returns CORE_REGION이면 true
+ */
+export function isCoreRegionByAddress(address: string): boolean {
+    if (!address) return false;
+    return CORE_REGION_KEYWORDS.some(keyword => address.includes(keyword));
+}
+

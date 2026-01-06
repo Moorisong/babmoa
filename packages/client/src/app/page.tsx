@@ -6,9 +6,9 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import classNames from 'classnames';
 import { Header, LinkShare, DateTimePicker, PlaceBottomSheet, SearchModal } from '@/components';
-import { ROUTES, CONFIG, type District } from '@/constants';
+import { ROUTES, CONFIG } from '@/constants';
 import { roomsApi } from '@/lib/api';
-import type { KakaoPlace, Place } from '@/types';
+import type { KakaoPlace, Place, RegionStatus } from '@/types';
 import { canCreateRoom, getRoomCreationCooldownRemaining, setRoomCreatedAt, getParticipantId } from '@/lib/utils';
 import styles from './page.module.css';
 
@@ -36,8 +36,10 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
 
-  const [selectedDistrict, setSelectedDistrict] = useState<District>('대구시');
+
+
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
+  const [selectedRegionStatus, setSelectedRegionStatus] = useState<RegionStatus>('OPEN');  // 선택된 장소의 지역 상태
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [focusCoords, setFocusCoords] = useState<{ x: string; y: string } | null>(null);
@@ -62,28 +64,13 @@ export default function HomePage() {
 
   const handleMarkerClick = useCallback((place: KakaoPlace) => {
     setSelectedPlace(place);
+    setSelectedRegionStatus(place.regionStatus || 'OPEN');  // 지역 상태 설정
     setIsBottomSheetOpen(true);
   }, []);
 
   const handleAddPlace = (kakaoPlace: KakaoPlace) => {
     if (places.some(p => p.placeId === kakaoPlace.placeId)) {
       showToast('이미 추가된 장소입니다');
-      return;
-    }
-
-    // 주소 매칭용 키워드 (카카오 API 주소 형식에 맞춤)
-    const districtKeywords: Record<string, string[]> = {
-      '대구시': ['대구', '대구광역시'],
-      '경산시': ['경산']
-    };
-
-    const isSupported = CONFIG.SUPPORTED_DISTRICTS.some(district => {
-      const keywords = districtKeywords[district] || [district];
-      return keywords.some(keyword => kakaoPlace.address.includes(keyword));
-    });
-
-    if (!isSupported) {
-      showToast(`현재 ${CONFIG.SUPPORTED_DISTRICTS.join(', ')}만 지원합니다`);
       return;
     }
 
@@ -110,6 +97,8 @@ export default function HomePage() {
     handleAddPlace(kakaoPlace);
     setIsSearchExpanded(false);
   };
+
+
 
   const handleSubmit = async () => {
     if (!canCreateRoom()) {
@@ -209,8 +198,8 @@ export default function HomePage() {
       <main className={styles.main}>
         <div className={styles.hero}>
           <h1 className={styles.heroTitle}>
-            <span className={styles.heroGradient}>대구+경산</span>
-            <span> 오늘의 회식 PICK</span>
+            <span className={styles.heroGradient}>오늘의 회식</span>
+            <span> PICK</span>
           </h1>
           <p className={styles.heroSubtitle}>
             지도에서 식당을 찾고, <span className={styles.heroHighlight}>주차 정보</span>까지 확인하세요
@@ -223,31 +212,16 @@ export default function HomePage() {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="예: 12월 팀 송년회 장소"
+            placeholder="예: 이번 달 우리팀 회식"
             className={styles.input}
           />
         </div>
 
         <div className={styles.section} style={{ animationDelay: '0.15s' }}>
-          <label className={styles.sectionLabel}>🗺️ 지도에서 후보 선택</label>
-
-          <div className={styles.districtChips}>
-            {CONFIG.SUPPORTED_DISTRICTS.map((district) => (
-              <button
-                key={district}
-                onClick={() => setSelectedDistrict(district)}
-                className={classNames(styles.districtChip, {
-                  [styles.districtChipActive]: selectedDistrict === district
-                })}
-              >
-                📍 {district}
-              </button>
-            ))}
-          </div>
+          <label className={styles.sectionLabel}>📍 지도에서 후보 선택</label>
 
           <div className={styles.mapContainer}>
             <KakaoMap
-              district={selectedDistrict}
               onMarkerClick={handleMarkerClick}
               focusCoords={focusCoords}
             />
@@ -256,6 +230,11 @@ export default function HomePage() {
               <span><b>빨간 마커</b>를 클릭하면 상세 정보를 확인할 수 있어요</span>
             </div>
           </div>
+
+          {/* 고정 안내 문구 */}
+          <p className={styles.parkingDisclaimer}>
+            주차 정보는 실제 방문 기록을 기반으로 제공되며, 지역 및 장소에 따라 표시되지 않을 수 있습니다.
+          </p>
 
           <button
             onClick={() => setIsSearchExpanded(!isSearchExpanded)}
@@ -275,7 +254,6 @@ export default function HomePage() {
                 onClose={() => setIsSearchExpanded(false)}
                 onSelectPlace={handleSearchSelect}
                 addedPlaceIds={places.map(p => p.placeId)}
-                selectedDistrict={selectedDistrict}
                 isInline={true}
               />
             </div>
@@ -299,20 +277,6 @@ export default function HomePage() {
                   style={{ animationDelay: `${index * 0.05}s` }}
                   onClick={() => {
                     if (place.x && place.y) {
-                      // 주소 기반으로 지역 자동 변경
-                      const districtKeywords: Record<string, string[]> = {
-                        '대구시': ['대구', '대구광역시'],
-                        '경산시': ['경산']
-                      };
-
-                      let targetDistrict: District | null = null;
-                      for (const [district, keywords] of Object.entries(districtKeywords)) {
-                        if (keywords.some(keyword => place.address.includes(keyword))) {
-                          targetDistrict = district as District;
-                          break;
-                        }
-                      }
-
                       const kakaoPlace: KakaoPlace = {
                         placeId: place.placeId,
                         name: place.name,
@@ -325,20 +289,9 @@ export default function HomePage() {
                         parkingInfo: null,
                       };
 
-                      // 지역 변경이 필요한 경우
-                      if (targetDistrict && targetDistrict !== selectedDistrict) {
-                        // 먼저 focusCoords 설정 (District useEffect에서 이를 감지하여 중심 이동 스킵)
-                        setFocusCoords({ x: place.x, y: place.y });
-                        // 그 다음 지역 변경
-                        setSelectedDistrict(targetDistrict);
-                        setSelectedPlace(kakaoPlace);
-                        setIsBottomSheetOpen(true);
-                      } else {
-                        // 같은 지역이면 즉시 포커스
-                        setFocusCoords({ x: place.x, y: place.y });
-                        setSelectedPlace(kakaoPlace);
-                        setIsBottomSheetOpen(true);
-                      }
+                      setFocusCoords({ x: place.x, y: place.y });
+                      setSelectedPlace(kakaoPlace);
+                      setIsBottomSheetOpen(true);
                     }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
@@ -418,6 +371,7 @@ export default function HomePage() {
         onClose={() => setIsBottomSheetOpen(false)}
         onAddPlace={handleAddPlace}
         isAlreadyAdded={selectedPlace ? places.some(p => p.placeId === selectedPlace.placeId) : false}
+        regionStatus={selectedRegionStatus}
       />
 
       {mounted && toast && toast.show && createPortal(
