@@ -1,10 +1,25 @@
-const { ParkingStats } = require('../models');
+const { ParkingStats, RegionState } = require('../models');
+const { isCoreRegion } = require('../services/regionService');
 const { ERROR_CODES } = require('../constants');
 
 // GET /api/b2b/parking/:placeId - 특정 장소 집계 데이터
+// [!IMPORTANT] regionGuard 적용 - CORE_REGION만 데이터 제공
 exports.getPlaceStats = async (req, res) => {
     try {
         const { placeId } = req.params;
+        const { regionId } = req.query;
+
+        // Region Guard: CORE_REGION 여부 확인
+        const isCore = await isCoreRegion(regionId);
+
+        if (!isCore) {
+            // CORE가 아니면 B2B 데이터 제공 불가
+            return res.json({
+                success: true,
+                data: null,
+                message: '해당 지역은 아직 데이터가 충분하지 않습니다'
+            });
+        }
 
         const stats = await ParkingStats.find({ placeId });
 
@@ -56,9 +71,10 @@ exports.getPlaceStats = async (req, res) => {
 };
 
 // GET /api/b2b/parking/bulk - 다건 장소 집계 데이터
+// [!IMPORTANT] regionGuard 적용 - CORE_REGION만 데이터 제공
 exports.getBulkStats = async (req, res) => {
     try {
-        const { placeIds } = req.query;
+        const { placeIds, regionIds } = req.query;
 
         if (!placeIds) {
             return res.status(400).json({
@@ -69,12 +85,25 @@ exports.getBulkStats = async (req, res) => {
 
         // placeIds는 콤마로 구분된 문자열 또는 배열
         const placeIdArray = Array.isArray(placeIds) ? placeIds : placeIds.split(',');
+        const regionIdArray = regionIds ? (Array.isArray(regionIds) ? regionIds : regionIds.split(',')) : [];
+
+        // CORE_REGION인 지역만 필터링
+        const coreRegions = await RegionState.find({
+            regionId: { $in: regionIdArray },
+            status: 'CORE'
+        }).distinct('regionId');
 
         const stats = await ParkingStats.find({ placeId: { $in: placeIdArray } });
 
-        // 장소별로 그룹화
+        // 장소별로 그룹화 (CORE_REGION만)
         const grouped = {};
         stats.forEach(stat => {
+            // regionId가 CORE_REGION인 경우만 포함
+            const statRegionId = regionIdArray[placeIdArray.indexOf(stat.placeId)];
+            if (!coreRegions.includes(statRegionId) && regionIdArray.length > 0) {
+                return; // CORE가 아니면 스킵
+            }
+
             if (!grouped[stat.placeId]) {
                 grouped[stat.placeId] = {
                     placeId: stat.placeId,
@@ -116,3 +145,4 @@ exports.getBulkStats = async (req, res) => {
         });
     }
 };
+
