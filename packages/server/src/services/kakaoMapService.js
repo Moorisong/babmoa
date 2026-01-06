@@ -112,17 +112,20 @@ async function searchPlaces(keyword, options = {}) {
         baseKeyword = `${baseKeyword} ${categoryKeyword}`;
     }
 
-    // 지역구 자동 감지
+    // 지역구 자동 감지 (명시적인 지역명만 감지, 예: "대구시 치킨", "경산시 카페")
+    // 일반적인 검색어("치킨", "피자" 등)는 모든 지역에서 검색
     let targetDistrict = null;
-    for (const [districtName, config] of Object.entries(DISTRICT_CONFIG)) {
-        if (config.keywords.some(kw => keyword.includes(kw)) || keyword.includes(districtName)) {
+    for (const districtName of SUPPORTED_DISTRICTS) {
+        // 검색어에 정확한 지역명이 포함된 경우에만 해당 지역으로 한정
+        if (keyword.includes(districtName)) {
             targetDistrict = districtName;
             break;
         }
     }
 
-    // 지역구가 없으면 3개 지역 모두 검색
+    // 지역구가 없으면 2개 지역 모두 검색
     if (!targetDistrict) {
+
         const cacheKey = cacheService.getSearchCacheKey(
             'districts:v3:multi',
             `${baseKeyword}:${page}:${size}:${category}`
@@ -135,31 +138,40 @@ async function searchPlaces(keyword, options = {}) {
             return cached;
         }
 
-        // 2개 지역 동시 검색
+        // 2개 지역 동시 검색 (각 지역에서 충분한 결과 확보)
+        // page 파라미터를 무시하고 각 지역에서 여러 페이지 가져오기
         const allDocs = [];
-        const searchPromises = SUPPORTED_DISTRICTS.map(async (districtName) => {
+        const pagesPerDistrict = 3; // 각 지역에서 3페이지씩
+
+        for (const districtName of SUPPORTED_DISTRICTS) {
             const config = DISTRICT_CONFIG[districtName];
             const searchKeyword = DISTRICT_SEARCH_KEYWORD[districtName] || districtName;
             const districtSearchKeyword = `${searchKeyword} ${baseKeyword}`;
 
-            try {
-                const data = await callKakaoApi('/search/keyword.json', {
-                    query: districtSearchKeyword,
-                    page,
-                    size: 15,
-                    x: config.center.x,
-                    y: config.center.y,
-                    radius,
-                    sort: 'distance',
-                });
-                return data.documents;
-            } catch {
-                return [];
-            }
-        });
+            // 각 지역에서 여러 페이지 검색
+            for (let p = 1; p <= pagesPerDistrict; p++) {
+                try {
+                    const data = await callKakaoApi('/search/keyword.json', {
+                        query: districtSearchKeyword,
+                        page: p,
+                        size: 15,
+                        x: config.center.x,
+                        y: config.center.y,
+                        radius,
+                        sort: 'distance',
+                    });
+                    allDocs.push(...(data.documents || []));
 
-        const results = await Promise.all(searchPromises);
-        results.forEach(docs => allDocs.push(...docs));
+                    // 더 이상 결과가 없으면 중단
+                    if (!data.documents || data.documents.length === 0 || data.meta?.is_end) {
+                        break;
+                    }
+                } catch (error) {
+                    console.error(`[searchPlaces] ${districtName} page ${p} search failed:`, error.message);
+                    break;
+                }
+            }
+        }
 
         // 음식점, 카페, 술집만 필터링 + 지원 지역 필터
         const foodCategories = ['음식점', '카페', '술집'];
