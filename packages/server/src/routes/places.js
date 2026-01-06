@@ -11,4 +11,10 @@ router.get('/categories', placesController.getCategories);
 // GET /api/places/district/:district - 지역별 장소 목록 (지도 마커용)
 router.get('/district/:district', placesController.getPlacesByDistrict);
 
+// GET /api/places/region-status - 지역 상태 조회
+router.get('/region-status', placesController.getRegionStatus);
+
+// POST /api/places/bulk-info - 여러 장소의 목록 정보 조회 (주차/지역 상태)
+router.post('/bulk-info', placesController.getBulkPlacesInfo);
+
 module.exports = router;

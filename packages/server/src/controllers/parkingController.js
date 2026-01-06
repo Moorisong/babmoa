@@ -1,11 +1,12 @@
 const { ParkingData, ParkingStats, VoteRoom } = require('../models');
 const { updateStatsOnNewRecord } = require('../services/aggregationService');
+const { isCoreRegion } = require('../services/regionService');
 const { ERROR_CODES } = require('../constants');
 
 // POST /api/parking - 주차 경험 기록
 exports.recordParking = async (req, res) => {
     try {
-        const { roomId, placeId, participantId, parkingAvailable, parkingExperience, date, timeSlot } = req.body;
+        const { roomId, placeId, participantId, parkingAvailable, parkingExperience, date, timeSlot, regionId } = req.body;
 
         // 유효성 검사
         if (!roomId || !placeId || !participantId || parkingAvailable === undefined || !timeSlot) {
@@ -32,6 +33,7 @@ exports.recordParking = async (req, res) => {
         const experience = parkingAvailable ? parkingExperience : null;
 
         // 주차 데이터 저장 (중복이면 업데이트)
+        // regionId: 지역 집계 및 승격 판단에 사용
         const parkingData = await ParkingData.findOneAndUpdate(
             { roomId, participantId },
             {
@@ -41,7 +43,8 @@ exports.recordParking = async (req, res) => {
                 parkingAvailable,
                 parkingExperience: experience,
                 date: new Date(date || Date.now()),
-                timeSlot
+                timeSlot,
+                regionId: regionId || null  // 행정구역 ID 저장
             },
             { upsert: true, new: true }
         );
@@ -63,11 +66,27 @@ exports.recordParking = async (req, res) => {
 };
 
 // GET /api/parking/:placeId/stats - 장소별 주차 통계
+// [!IMPORTANT] regionGuard 적용 - CORE_REGION만 통계 노출
 exports.getStats = async (req, res) => {
     try {
         const { placeId } = req.params;
+        const { regionId } = req.query; // 클라이언트에서 전달받거나 DB에서 조회
 
-        // 모든 시간대 통계 조회
+        // Region Guard: CORE_REGION 여부 확인
+        const isCore = await isCoreRegion(regionId);
+
+        if (!isCore) {
+            // CORE가 아니면 통계 필드 제외하고 반환
+            return res.json({
+                success: true,
+                data: {
+                    placeId,
+                    regionStatus: 'COLLECTING'  // 데이터 수집 중 상태
+                }
+            });
+        }
+
+        // CORE_REGION: 전체 통계 반환
         const stats = await ParkingStats.find({ placeId });
 
         if (stats.length === 0) {
@@ -77,7 +96,8 @@ exports.getStats = async (req, res) => {
                     placeId,
                     totalAttempts: 0,
                     successRate: 0,
-                    byTimeSlot: {}
+                    byTimeSlot: {},
+                    regionStatus: 'AVAILABLE'
                 }
             });
         }
@@ -104,7 +124,8 @@ exports.getStats = async (req, res) => {
                 placeId,
                 totalAttempts,
                 successRate: Math.round(overallSuccessRate * 100) / 100,
-                byTimeSlot
+                byTimeSlot,
+                regionStatus: 'AVAILABLE'
             }
         });
     } catch (error) {
@@ -115,3 +136,4 @@ exports.getStats = async (req, res) => {
         });
     }
 };
+

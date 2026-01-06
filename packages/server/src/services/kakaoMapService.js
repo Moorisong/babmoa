@@ -2,7 +2,7 @@
  * 카카오맵 API 서비스
  * 장소 검색 및 상세 정보 조회
  * 캐싱 적용
- * 지원 지역: 대구시, 경산시
+ * 검색 범위: 전국 (주차 정보 노출은 CORE_REGION에서만)
  */
 
 const { cacheService } = require('./cacheService');
@@ -89,11 +89,14 @@ async function callKakaoApi(endpoint, params = {}) {
 }
 
 /**
- * 장소 검색 (키워드)
+ * 장소 검색 (키워드) - 전국 범위
+ * 주차 정보 노출은 Bulk Info API에서 CORE_REGION 여부로 결정
  */
 async function searchPlaces(keyword, options = {}) {
     const {
-        radius = 5000,
+        x,
+        y,
+        radius = 20000,
         page = 1,
         size = 15,
         category = '전체',
@@ -101,132 +104,21 @@ async function searchPlaces(keyword, options = {}) {
     } = options;
 
     const categoryKeyword = CATEGORY_MAP[category] || '';
-    let baseKeyword = keyword;
+    let searchKeyword = keyword;
+
+    // 카테고리 키워드 추가
+    if (categoryKeyword && !searchKeyword.includes(categoryKeyword)) {
+        searchKeyword = `${searchKeyword} ${categoryKeyword}`;
+    }
 
     // 맛집/음식점/식당 키워드가 없으면 추가
-    if (!baseKeyword.includes('맛집') && !baseKeyword.includes('음식점') && !baseKeyword.includes('식당')) {
-        baseKeyword = categoryKeyword
-            ? `${baseKeyword} ${categoryKeyword}`
-            : `${baseKeyword} 맛집`;
-    } else if (categoryKeyword && !baseKeyword.includes(categoryKeyword)) {
-        baseKeyword = `${baseKeyword} ${categoryKeyword}`;
-    }
-
-    // 지역구 자동 감지 (명시적인 지역명만 감지, 예: "대구시 치킨", "경산시 카페")
-    // 일반적인 검색어("치킨", "피자" 등)는 모든 지역에서 검색
-    let targetDistrict = null;
-    for (const districtName of SUPPORTED_DISTRICTS) {
-        // 검색어에 정확한 지역명이 포함된 경우에만 해당 지역으로 한정
-        if (keyword.includes(districtName)) {
-            targetDistrict = districtName;
-            break;
-        }
-    }
-
-    // 지역구가 없으면 2개 지역 모두 검색
-    if (!targetDistrict) {
-
-        const cacheKey = cacheService.getSearchCacheKey(
-            'districts:v3:multi',
-            `${baseKeyword}:${page}:${size}:${category}`
-        );
-        const cached = cacheService.get(cacheKey);
-        if (cached) {
-            if (shuffle && cached.places) {
-                return { ...cached, places: shuffleArray(cached.places) };
-            }
-            return cached;
-        }
-
-        // 2개 지역 동시 검색 (각 지역에서 충분한 결과 확보)
-        // page 파라미터를 무시하고 각 지역에서 여러 페이지 가져오기
-        const allDocs = [];
-        const pagesPerDistrict = 3; // 각 지역에서 3페이지씩
-
-        for (const districtName of SUPPORTED_DISTRICTS) {
-            const config = DISTRICT_CONFIG[districtName];
-            const searchKeyword = DISTRICT_SEARCH_KEYWORD[districtName] || districtName;
-            const districtSearchKeyword = `${searchKeyword} ${baseKeyword}`;
-
-            // 각 지역에서 여러 페이지 검색
-            for (let p = 1; p <= pagesPerDistrict; p++) {
-                try {
-                    const data = await callKakaoApi('/search/keyword.json', {
-                        query: districtSearchKeyword,
-                        page: p,
-                        size: 15,
-                        x: config.center.x,
-                        y: config.center.y,
-                        radius,
-                        sort: 'distance',
-                    });
-                    allDocs.push(...(data.documents || []));
-
-                    // 더 이상 결과가 없으면 중단
-                    if (!data.documents || data.documents.length === 0 || data.meta?.is_end) {
-                        break;
-                    }
-                } catch (error) {
-                    console.error(`[searchPlaces] ${districtName} page ${p} search failed:`, error.message);
-                    break;
-                }
-            }
-        }
-
-        // 음식점, 카페, 술집만 필터링 + 지원 지역 필터
-        const foodCategories = ['음식점', '카페', '술집'];
-        const filteredDocs = allDocs.filter(doc => {
-            if (!foodCategories.includes(doc.category_group_name)) return false;
-            const address = doc.road_address_name || doc.address_name || '';
-            return SUPPORTED_DISTRICTS.some(district => {
-                const keywords = DISTRICT_ADDRESS_KEYWORDS[district] || [district];
-                return keywords.some(keyword => address.includes(keyword));
-            });
-        });
-
-        // 중복 제거 (slice 제거 - 전체 결과 반환)
-        const seen = new Set();
-        const uniqueDocs = filteredDocs.filter(doc => {
-            if (seen.has(doc.id)) return false;
-            seen.add(doc.id);
-            return true;
-        });
-
-        let places = uniqueDocs.map(doc => ({
-            placeId: doc.id,
-            name: doc.place_name,
-            address: doc.road_address_name || doc.address_name,
-            category: doc.category_group_name || doc.category_name,
-            categoryDetail: doc.category_name,
-            phone: doc.phone,
-            x: doc.x,
-            y: doc.y,
-        }));
-
-        if (shuffle) places = shuffleArray(places);
-
-        const result = {
-            places,
-            meta: { totalCount: uniqueDocs.length, pageableCount: uniqueDocs.length, isEnd: true, currentPage: page },
-        };
-
-        cacheService.set(cacheKey, result, cacheService.TTL.PLACE_SEARCH);
-        return result;
-    }
-
-    // 특정 지역구 검색
-    const districtConfig = DISTRICT_CONFIG[targetDistrict];
-    const centerCoords = districtConfig.center;
-    const districtSearchKeyword = DISTRICT_SEARCH_KEYWORD[targetDistrict] || targetDistrict;
-    let searchKeyword = baseKeyword;
-
-    if (!keyword.includes(targetDistrict) && !keyword.includes(districtSearchKeyword)) {
-        searchKeyword = `${districtSearchKeyword} ${baseKeyword}`;
+    if (!searchKeyword.includes('맛집') && !searchKeyword.includes('음식점') && !searchKeyword.includes('식당')) {
+        searchKeyword = `${searchKeyword} 맛집`;
     }
 
     const cacheKey = cacheService.getSearchCacheKey(
-        'districts:v3',
-        `${searchKeyword}:${page}:${size}:${category}:${targetDistrict}`
+        'nationwide:v1',
+        `${searchKeyword}:${page}:${size}:${category}:${x || 'none'}:${y || 'none'}`
     );
 
     const cached = cacheService.get(cacheKey);
@@ -237,26 +129,31 @@ async function searchPlaces(keyword, options = {}) {
         return cached;
     }
 
-    const data = await callKakaoApi('/search/keyword.json', {
+    // 카카오 API 호출 파라미터
+    const params = {
         query: searchKeyword,
         page,
         size: 15,
-        x: centerCoords.x,
-        y: centerCoords.y,
-        radius,
-        sort: 'distance',
-    });
+        sort: 'accuracy',
+    };
 
+    // 위치 기반 검색 (x, y가 제공된 경우)
+    if (x && y) {
+        params.x = x;
+        params.y = y;
+        params.radius = radius;
+        params.sort = 'distance';
+    }
+
+    const data = await callKakaoApi('/search/keyword.json', params);
+
+    // 음식점, 카페, 술집만 필터링 (지역 필터 없음 - 전국 검색)
     const foodCategories = ['음식점', '카페', '술집'];
-    const filteredDocs = data.documents.filter(doc => {
-        if (!foodCategories.includes(doc.category_group_name)) return false;
-        const address = doc.road_address_name || doc.address_name || '';
-        return SUPPORTED_DISTRICTS.some(district => {
-            const keywords = DISTRICT_ADDRESS_KEYWORDS[district] || [district];
-            return keywords.some(keyword => address.includes(keyword));
-        });
-    });
+    const filteredDocs = data.documents.filter(doc =>
+        foodCategories.includes(doc.category_group_name)
+    );
 
+    // 중복 제거
     const seen = new Set();
     const uniqueDocs = filteredDocs.filter(doc => {
         if (seen.has(doc.id)) return false;
