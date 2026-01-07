@@ -5,10 +5,24 @@
   --foreground: #1e293b;
   --primary: #6366f1;
   --primary-dark: #4f46e5;
+  --primary-rgb: 99, 102, 241;
   --secondary: #f59e0b;
   --accent: #10b981;
   --card-bg: #ffffff;
   --card-border: #e2e8f0;
+
+  /* Gray Scale */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
 }
 
 @theme inline {

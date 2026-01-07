@@ -42,6 +42,7 @@ export default function HomePage() {
   const [selectedRegionStatus, setSelectedRegionStatus] = useState<RegionStatus>('OPEN');  // 선택된 장소의 지역 상태
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [showTitleModal, setShowTitleModal] = useState(true);
   const [focusCoords, setFocusCoords] = useState<{ x: string; y: string } | null>(null);
 
   const [mounted, setMounted] = useState(false);
@@ -224,8 +225,6 @@ export default function HomePage() {
             <KakaoMap
               onMarkerClick={handleMarkerClick}
               focusCoords={focusCoords}
-              title={title}
-              onTitleChange={setTitle}
             />
             <div className={styles.mapHint}>
               <span className={styles.mapHintIcon}>📍</span>
@@ -375,6 +374,38 @@ export default function HomePage() {
         isAlreadyAdded={selectedPlace ? places.some(p => p.placeId === selectedPlace.placeId) : false}
         regionStatus={selectedRegionStatus}
       />
+
+      {/* Title Input Modal */}
+      {mounted && showTitleModal && createPortal(
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h2 className={styles.modalTitle}>오늘의 투표 제목은? 📝</h2>
+            <p className={styles.modalSubtitle}>제목을 정하면 지도에서 맛집을 찾을 수 있어요!</p>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (title.trim()) setShowTitleModal(false);
+              else showToast('제목을 입력해주세요');
+            }}>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="예: 오늘 점심 회식"
+                className={styles.modalInput}
+                autoFocus
+              />
+              <button
+                type="submit"
+                className={styles.modalButton}
+                disabled={!title.trim()}
+              >
+                입력 완료
+              </button>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {mounted && toast && toast.show && createPortal(
         <div className={styles.toastContainer}>
