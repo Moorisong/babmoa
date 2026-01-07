@@ -67,6 +67,7 @@ export default function KakaoMap({ onMarkerClick, focusCoords }: KakaoMapProps) 
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const focusCoordsRef = useRef<{ x: string; y: string } | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
+    const [isLocationChecked, setIsLocationChecked] = useState(false);
     const [searchingPlaces, setSearchingPlaces] = useState(false);
     const initialLoadCompleteRef = useRef(false);
 
@@ -271,10 +272,12 @@ export default function KakaoMap({ onMarkerClick, focusCoords }: KakaoMapProps) 
                         map.setCenter(userCenter);
                         map.setLevel(5);  // 유저 위치 기준 적절한 줌 레벨
                         searchPlacesInBounds();
+                        setIsLocationChecked(true);
                     },
                     () => {
                         // 위치 확인 실패 시 기본 위치에서 검색
                         searchPlacesInBounds();
+                        setIsLocationChecked(true);
                     },
                     { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
                 );
@@ -282,6 +285,7 @@ export default function KakaoMap({ onMarkerClick, focusCoords }: KakaoMapProps) 
                 // Geolocation 미지원 시
                 setTimeout(() => {
                     searchPlacesInBounds();
+                    setIsLocationChecked(true);
                 }, 500);
             }
         });
@@ -308,7 +312,7 @@ export default function KakaoMap({ onMarkerClick, focusCoords }: KakaoMapProps) 
         <div className={styles.container}>
             <div ref={mapRef} className={styles.map} />
 
-            {(!isLoaded || (searchingPlaces && !initialLoadCompleteRef.current)) && (
+            {(!isLoaded || !isLocationChecked || (searchingPlaces && !initialLoadCompleteRef.current)) && (
                 <div className={styles.overlay}>
                     <div className={styles.loadingContent}>
                         <svg className={styles.spinner} viewBox="0 0 24 24" fill="none">
@@ -316,7 +320,7 @@ export default function KakaoMap({ onMarkerClick, focusCoords }: KakaoMapProps) 
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
                         <span className={styles.loadingText}>
-                            {!isLoaded ? '지도 로딩 중...' : '주변 식당 검색 중...'}
+                            {!isLocationChecked ? '위치 확인 중...' : (!isLoaded ? '지도 로딩 중...' : '주변 식당 검색 중...')}
                         </span>
                     </div>
                 </div>
