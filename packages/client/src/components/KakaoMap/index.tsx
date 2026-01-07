@@ -56,9 +56,11 @@ const DEFAULT_LEVEL = 7;
 interface KakaoMapProps {
     onMarkerClick: (place: KakaoPlace) => void;
     focusCoords?: { x: string; y: string } | null;
+    title?: string;
+    onTitleChange?: (title: string) => void;
 }
 
-export default function KakaoMap({ onMarkerClick, focusCoords }: KakaoMapProps) {
+export default function KakaoMap({ onMarkerClick, focusCoords, title, onTitleChange }: KakaoMapProps) {
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<KakaoMapInstance | null>(null);
     const placesServiceRef = useRef<PlacesService | null>(null);
@@ -351,14 +353,30 @@ export default function KakaoMap({ onMarkerClick, focusCoords }: KakaoMapProps) 
 
             {(!isLoaded || !isLocationChecked || (searchingPlaces && !initialLoadCompleteRef.current)) && (
                 <div className={styles.overlay}>
-                    <div className={styles.loadingContent}>
-                        <svg className={styles.spinner} viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        <span className={styles.loadingText}>
-                            {!isLocationChecked ? '위치 확인 중...' : (!isLoaded ? '지도 로딩 중...' : '주변 식당 검색 중...')}
-                        </span>
+                    <div className={styles.loadingContentColumn}>
+                        <div className={styles.loadingSpinnerWrapper}>
+                            <svg className={styles.spinner} viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            <span className={styles.loadingText}>
+                                {!isLocationChecked ? '위치 확인 중...' : (!isLoaded ? '지도 로딩 중...' : '주변 식당 검색 중...')}
+                            </span>
+                        </div>
+
+                        {!isLocationChecked && onTitleChange && (
+                            <div className={styles.loadingInputSection}>
+                                <p className={styles.loadingInputHint}>기다리는 동안 <b>투표 제목</b>을 정해볼까요?</p>
+                                <input
+                                    type="text"
+                                    value={title || ''}
+                                    onChange={(e) => onTitleChange(e.target.value)}
+                                    placeholder="예: 오늘 점심 회식"
+                                    className={styles.loadingInput}
+                                    autoFocus
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

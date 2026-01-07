@@ -224,6 +224,8 @@ export default function HomePage() {
             <KakaoMap
               onMarkerClick={handleMarkerClick}
               focusCoords={focusCoords}
+              title={title}
+              onTitleChange={setTitle}
             />
             <div className={styles.mapHint}>
               <span className={styles.mapHintIcon}>📍</span>
