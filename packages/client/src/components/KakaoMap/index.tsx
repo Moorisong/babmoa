@@ -69,7 +69,13 @@ export default function KakaoMap({ onMarkerClick, focusCoords }: KakaoMapProps) 
     const [isLoaded, setIsLoaded] = useState(false);
     const [isLocationChecked, setIsLocationChecked] = useState(false);
     const [searchingPlaces, setSearchingPlaces] = useState(false);
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
     const initialLoadCompleteRef = useRef(false);
+
+    const showToast = (msg: string) => {
+        setToastMessage(msg);
+        setTimeout(() => setToastMessage(null), 3000);
+    };
 
     const clearMarkers = useCallback(() => {
         markersRef.current.forEach(marker => marker.setMap(null));
@@ -263,8 +269,10 @@ export default function KakaoMap({ onMarkerClick, focusCoords }: KakaoMapProps) 
 
             // 유저 위치로 이동 (Geolocation API 사용)
             if ('geolocation' in navigator) {
+                console.log('Requesting geolocation...');
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
+                        console.log('Geolocation success:', position);
                         const userCenter = new window.kakao.maps.LatLng(
                             position.coords.latitude,
                             position.coords.longitude
@@ -274,16 +282,31 @@ export default function KakaoMap({ onMarkerClick, focusCoords }: KakaoMapProps) 
                         searchPlacesInBounds();
                         setIsLocationChecked(true);
                     },
-                    () => {
-                        // 위치 확인 실패 시 기본 위치에서 검색
+                    (err) => {
+                        console.error('Geolocation error:', err);
+                        let msg = '위치를 확인할 수 없어 기본 위치를 표시합니다.';
+                        if (err.code === 1) { // PERMISSION_DENIED
+                            msg = '위치 권한이 거부되었습니다. 설정에서 권한을 허용해주세요.';
+                        } else if (err.code === 2) { // POSITION_UNAVAILABLE
+                            msg = '현재 위치 정보를 사용할 수 없습니다.';
+                        } else if (err.code === 3) { // TIMEOUT
+                            msg = '위치 확인 시간이 초과되었습니다.';
+                        }
+                        showToast(msg);
                         searchPlacesInBounds();
                         setIsLocationChecked(true);
                     },
-                    { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
+                    {
+                        enableHighAccuracy: false, // 빠른 응답을 위해 GPS 대신 Wi-Fi/Cell 타워 사용
+                        timeout: 5000,
+                        maximumAge: 300000 // 5분 내의 캐시된 위치가 있으면 즉시 사용
+                    }
                 );
             } else {
+                console.warn('Geolocation not supported');
                 // Geolocation 미지원 시
                 setTimeout(() => {
+                    showToast('브라우저가 위치 정보를 지원하지 않습니다.');
                     searchPlacesInBounds();
                     setIsLocationChecked(true);
                 }, 500);
@@ -326,7 +349,11 @@ export default function KakaoMap({ onMarkerClick, focusCoords }: KakaoMapProps) 
                 </div>
             )}
 
-
+            {toastMessage && (
+                <div className={styles.toast}>
+                    {toastMessage}
+                </div>
+            )}
         </div>
     );
 }
