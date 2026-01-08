@@ -5,7 +5,7 @@ interface JsonLdProps {
 }
 
 export function JsonLd({ type }: JsonLdProps) {
-    const baseUrl = 'https://babmoa-vote.vercel.app';
+    const baseUrl = 'https://babmoa-web.haroo.site';
 
     const websiteSchema = {
         '@context': 'https://schema.org',
@@ -61,7 +61,7 @@ interface VoteRoomJsonLdProps {
 }
 
 export function VoteRoomJsonLd({ roomTitle, roomId, placesCount, deadline }: VoteRoomJsonLdProps) {
-    const baseUrl = 'https://babmoa-vote.vercel.app';
+    const baseUrl = 'https://babmoa-web.haroo.site';
 
     const schema = {
         '@context': 'https://schema.org',

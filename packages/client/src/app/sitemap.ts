@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://babmoa-vote.vercel.app';
+    const baseUrl = 'https://babmoa-web.haroo.site';
 
     return [
         {

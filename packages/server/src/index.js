@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors({
-  origin: ['https://babmoa-vote.vercel.app', 'http://localhost:3000'],
+  origin: ['https://babmoa-web.haroo.site', 'http://localhost:3000'],
   credentials: true
 }));
 app.use(express.json());

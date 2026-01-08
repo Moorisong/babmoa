@@ -5,7 +5,7 @@ export const metadata: Metadata = {
     title: "개인정보처리방침",
     description: "밥모아 서비스의 개인정보처리방침입니다. 수집 항목, 이용 목적, 보관 기간 등을 안내합니다.",
     alternates: {
-        canonical: "https://babmoa-vote.vercel.app/privacy",
+        canonical: "https://babmoa-web.haroo.site/privacy",
     },
 };
 

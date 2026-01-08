@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://babmoa-vote.vercel.app/sitemap.xml
+Sitemap: https://babmoa-web.haroo.site/sitemap.xml
 
 # Disallow admin/API paths (if any)
 Disallow: /api/

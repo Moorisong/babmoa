@@ -21,18 +21,18 @@ export const metadata: Metadata = {
     template: "%s | 밥모아",
   },
   description: "팀 회식 장소를 빠르게 정해보세요. 실제 방문 기록 기반 주차 정보까지!",
-  metadataBase: new URL('https://babmoa-vote.vercel.app'),
+  metadataBase: new URL('https://babmoa-web.haroo.site'),
   keywords: ["회식", "투표", "장소 추천", "팀 회식", "대구 맛집", "경산 맛집", "주차 정보", "밥모아"],
   authors: [{ name: "밥모아" }],
   creator: "밥모아",
   openGraph: {
     title: "밥모아 - 회식 결정 투표",
     description: "어디서 먹을지 같이 정해요! 투표 마감 전에 참여해주세요 ⏰",
-    url: "https://babmoa-vote.vercel.app",
+    url: "https://babmoa-web.haroo.site",
     siteName: "밥모아",
     images: [
       {
-        url: "https://babmoa-vote.vercel.app/og-image.png",
+        url: "https://babmoa-web.haroo.site/og-image.png",
         width: 1200,
         height: 630,
         alt: "밥모아 - 회식 결정 투표",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "밥모아 - 회식 결정 투표",
     description: "어디서 먹을지 같이 정해요! 투표 마감 전에 참여해주세요 ⏰",
-    images: ["https://babmoa-vote.vercel.app/og-image.png"],
+    images: ["https://babmoa-web.haroo.site/og-image.png"],
   },
   robots: {
     index: true,
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://babmoa-vote.vercel.app",
+    canonical: "https://babmoa-web.haroo.site",
   },
 };
 
