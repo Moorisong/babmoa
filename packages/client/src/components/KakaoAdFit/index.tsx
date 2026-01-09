@@ -11,7 +11,7 @@ interface KakaoAdFitProps {
 }
 
 export default function KakaoAdFit({
-    unit = 'DAN-autWIUxSZYqBcG6n',
+    unit = 'DAN-1zvhnHbsFOj6k1eg',
     width = 320,
     height = 50,
     className
