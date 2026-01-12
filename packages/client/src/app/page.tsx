@@ -226,10 +226,6 @@ export default function HomePage() {
               onMarkerClick={handleMarkerClick}
               focusCoords={focusCoords}
             />
-            <div className={styles.mapHint}>
-              <span className={styles.mapHintIcon}>📍</span>
-              <span><b>빨간 마커</b>를 클릭하면 상세 정보를 확인할 수 있어요</span>
-            </div>
           </div>
 
           {/* 고정 안내 문구 */}

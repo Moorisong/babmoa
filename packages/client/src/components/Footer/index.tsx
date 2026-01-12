@@ -7,7 +7,7 @@ export default function Footer() {
         <footer className={styles.footer}>
             <div className={styles.container}>
                 <KakaoAdFit
-                    unit="DAN-autWIUxSZYqBcG6n"
+                    unit="DAN-1zvhnHbsFOj6k1eg"
                     width={320}
                     height={50}
                 />
